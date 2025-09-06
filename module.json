@@ -9,8 +9,7 @@
     "verified": 13
   },
   "scripts": [
-    "scripts/mystic-automation.js",
-    "scripts/macros.js"
+    "scripts/mystic-automation.js"
   ],
   "packs": [
     {
