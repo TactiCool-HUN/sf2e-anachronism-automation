@@ -1,9 +1,9 @@
 {
   "id": "sf2e-anachronism-automation",
   "title": "SF2e Anachronism Automation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifest": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/latest/download/module.json",
-  "download": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/1.0.0/module.zip",
+  "download": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/1.0.1/module.zip",
   "compatibility": {
     "minimum": 13,
     "verified": 13
