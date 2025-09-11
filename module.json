@@ -9,13 +9,14 @@
     "verified": 13
   },
   "scripts": [
-    "scripts/mystic-automation.js"
+    "scripts/mystic-automation.js",
+    "scripts/environmental-protection.js"
   ],
   "packs": [
     {
       "name": "SF2e Automation Macros",
       "label": "SF2e Anachronism Automation",
-      "path": "./packs/macros",
+      "path": "./packs/macros.db",
       "type": "Macro",
       "ownership": {
         "PLAYER": "OBSERVER",
