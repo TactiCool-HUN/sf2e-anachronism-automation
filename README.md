@@ -2,8 +2,6 @@
 As I started running an ME: Andromeda inspired Starfinder 2e campaign I found some things are missing that I could easily automate, so I made a little collection for it.
 
 # What does it do?
-Currently, here are the functions:
-
 **Mystic**
 - Mystic automatically recharges the proper amount of vitality network points in encounter mode at the start of their turn.
 - Adds a macro for the Transfer Vitality action.
