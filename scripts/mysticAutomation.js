@@ -1,4 +1,4 @@
-console.log('sf2e-anachronism-automation | Init file: mystic-automation.js');
+console.log('sf2e-anachronism-automation | Init file: mysticAutomation.js');
 
 Hooks.on('init', () => {
     game.settings.register('sf2e-anachronism-automation', 'mystic-network-recharge', {
@@ -34,10 +34,5 @@ Hooks.on("ready", () => {
     }
 });
 
-export function transferVitality() {
-    ui.notifications.info(`Transferring vitality!`);
-}
 
-globalThis.transferVitality = transferVitality;
-
-console.log('sf2e-anachronism-automation | Init successful: mystic-automation.js');
+console.log('sf2e-anachronism-automation | Init successful: mysticAutomation.js');
