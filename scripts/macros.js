@@ -15,26 +15,21 @@ Hooks.once("ready", () => {
 function armorHasProtection(armor) {
     for (let subitem of armor.system.subitems) {
         if (subitem.name.toLowerCase().includes("environmental protection")) {
-            console.log("prot: subitem (on)");
             return true;
         }
     }
 
     if (armor.system.traits.value.includes("exposed")) {
-        console.log("prot: exposed (off)");
         return false;
     }
 
     if (game.settings.get('sf2e-anachronism-automation', 'check-publication')) {
         const publication = armor.system.publication.title.toLowerCase();
-        console.log(publication);
         if (!publication.includes("starfinder") && !publication.includes("sf")) {
-            console.log("prot: old (off)");
             return false;
         }
     }
 
-    console.log("prot: default (on)")
     return true;
 }
 
@@ -196,7 +191,6 @@ async function transferVitality() {
     })
     if (!response) return;
 
-    console.log(response.healing);
     await actor.updateResource('vitalityNetwork', current_network - response.healing);
 
     const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
@@ -213,16 +207,25 @@ async function getEm() {
     const targets = game.user.targets;
     if (targets.size === 0) return ui.notifications.warn("No target selected!");
     if (targets.size > 1) return ui.notifications.warn("Only select one target!");
+
     const target_uuid = targets.values().next().value.document.uuid;
 
+    const is_main_class = actor.class.name === "Envoy";
+    const has_really_get_em = actor.itemTypes.feat.some(f => f.slug === "really-get-em");
+    let is_lead_by_example;
+    let lead_by_description = "You have not been <i>Lead by Example</i>, how shameful...";
 
-    const response = await foundry.applications.api.DialogV2.confirm({
-        window: { title: "Effect: Get 'Em!" },
-        content: "Lead By Example?",
-        rejectClose: false,
-        modal: true
-    });
-    if (response === null) return;
+    if (is_main_class || has_really_get_em) {
+        is_lead_by_example = await foundry.applications.api.DialogV2.confirm({
+            window: {title: "Effect: Get 'Em!"},
+            content: "Lead By Example?",
+            rejectClose: false,
+            modal: true
+        });
+        if (is_lead_by_example === null) return;
+    } else {
+        is_lead_by_example = false;
+    }
 
     const actorAlliance = actor.system.details.alliance;
 
@@ -231,72 +234,111 @@ async function getEm() {
         return alliance === actorAlliance;
     });
 
-    const effectGetEm = await fromUuid("Compendium.sf2e-anachronism.feat-effects.Item.ey2zSEnprAGgvrij");
-    effectGetEm.system.rules[0] = {
-        key: "TokenMark",
-        slug: "get-em",
-        uuid: target_uuid,
-    }
-    effectGetEm.origin = actor;
-    if (response) {
-        effectGetEm.system.rules[1] = {
-            "adjustName": false,
-            "choices": [
-                {
-                    "label": "PF2E.UI.RuleElements.ChoiceSet.YesLabel",
-                    "value": "lead-by-example",
-                    "predicate": [
-                        {
-                            "or": [
-                                {
-                                    "not": "parent:origin:item"
-                                },
-                                "parent:origin:item:tag:envoy-class",
-                                "parent:origin:item:tag:really-get-em"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "label": "PF2E.UI.RuleElements.ChoiceSet.NoLabel",
-                    "value": "not-lead-by-example"
-                }
+    const rules = [
+        {
+            key: "TokenMark",
+            slug: "get-em",
+            uuid: target_uuid,
+        },
+        {
+            key: "FlatModifier",
+            selector: "attack-roll",
+            value: 1,
+            type: "status",
+            predicate: [
+                "target:mark:get-em"
             ],
-            "rollOption": "get-em",
-            "key": "ChoiceSet",
-            "flag": "effectGetEm",
-            "selection": "lead-by-example"
+            slug: "get-em"
         }
-    } else {
-        effectGetEm.system.rules[1] = {
-            "adjustName": false,
-            "choices": [
+    ];
+
+    if (is_lead_by_example && is_main_class) {
+        lead_by_description = "<br><br><b>Lead by Example</b> The origin gains a status bonus to their initial Strike against the marked target equal to their Charisma modifier. You gain a status bonus to damage on subsequent Strikes made against the enemy until the start of your next turn.";
+        rules.push(
             {
-                "label": "PF2E.UI.RuleElements.ChoiceSet.YesLabel",
-                "value": "lead-by-example",
-                "predicate": [
+                key: "FlatModifier",
+                selector: "strike-damage",
+                value: "1+floor(@item.origin.level / 5)",
+                predicate: [
+                    "target:mark:get-em"
+                ],
+                type: "status",
+                slug: "get-em-lead-by-example",
+                hideIfDisabled: true
+            }
+        )
+
+        await actor.createEmbeddedDocuments("Item", [{
+            name: "Get 'Em! Lead By Example!",
+            type: "effect",
+            img: "modules/sf2e-anachronism/art/icons/abilities/orange-finger-beam.webp",
+            system: {
+                tokenIcon: {
+                    show: false
+                },
+                duration: {
+                    unit: "rounds",
+                    value: 1,
+                    expiry: "turn-start"
+                },
+                slug: "get-em-lead-by-example",
+                description: {
+                    value: "Granted by @UUID[Compendium.sf2e-anachronism.actions.Item.cmCtfURzpbzkxWsy]{Get 'Em!}<br><br>Adds the charisma modifier to the initial roll."
+                },
+                rules: [
                     {
-                        "or": [
-                            {
-                                "not": "parent:origin:item"
-                            },
-                            "parent:origin:item:tag:envoy-class",
-                            "parent:origin:item:tag:really-get-em"
-                        ]
+                        key: "FlatModifier",
+                        selector: [
+                            "strike-damage"
+                        ],
+                        type: "status",
+                        value: "@actor.abilities.cha.mod"
                     }
                 ]
-            },
-            {
-                "label": "PF2E.UI.RuleElements.ChoiceSet.NoLabel",
-                "value": "not-lead-by-example"
             }
-        ],
-            "rollOption": "get-em",
-            "key": "ChoiceSet",
-            "flag": "effectGetEm",
-            "selection": "not-lead-by-example"
-        }
+        }]);
+    } else if (is_lead_by_example && has_really_get_em) {
+        lead_by_description = "<br><br><b>Lead by Example</b> You gain a +2 status bonus on damage rolls of Strikes made against the enemy until the start of your next turn.";
+        rules.push(
+            {
+                key: "FlatModifier",
+                selector: "strike-damage",
+                value: "2",
+                predicate: [
+                    "target:mark:get-em"
+                ],
+                type: "status",
+                slug: "get-em-lead-by-example",
+                hideIfDisabled: true
+            }
+        )
     }
+
+    const effectGetEm = {
+        name: "Get 'Em!",
+        type: "effect",
+        img: "modules/sf2e-anachronism/art/icons/abilities/orange-finger-beam.webp",
+        system: {
+            context: {
+                origin: {
+                    actor: "Actor." + actor.id
+                }
+            },
+            tokenIcon: {
+                show: true
+            },
+            duration: {
+                unit: "rounds",
+                value: 1,
+                expiry: "turn-start"
+            },
+            slug: "get-em",
+            description: {
+                value: "Granted by @UUID[Compendium.sf2e-anachronism.actions.Item.cmCtfURzpbzkxWsy]{Get 'Em!}<br><br>You gain a +1 status bonus to attacks against the marked target." + lead_by_description
+            },
+            rules: rules
+        }
+    };
 
     for (token of ally_tokens) {
         await token.actor.createEmbeddedDocuments("Item", [effectGetEm]);

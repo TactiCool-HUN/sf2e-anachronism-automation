@@ -17,6 +17,11 @@ Currently, here are the functions:
   - Also detects if an armor has a subitem that includes "environmental protection" in its name.
 - Optional rule to make environmental protection actually fully airtight (just adds immunity to olfactory tbh, but this is how I run it so the option is there).
 
+**Envoy: Get 'Em!**
+- A macro that automatically applies the effect of Get 'Em! to all allied token on the scene.
+- - Dedication is handled correctly.
+- - Initial strike is now automatic, no longer needed to click a button to activate/deactivate it!
+
 # Settings
 ## Mystic Network Recharge
 [GM] Toggles whether mystic recharges their vitality network points on the start of their encounter turns automatically.
