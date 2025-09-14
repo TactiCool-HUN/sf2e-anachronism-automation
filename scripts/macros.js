@@ -13,9 +13,11 @@ Hooks.once("ready", () => {
 
 
 function armorHasProtection(armor) {
-    for (let subitem of armor.system.subitems) {
-        if (subitem.name.toLowerCase().includes("environmental protection")) {
-            return true;
+    if (armor.system.subitems.size > 0) {
+        for (let subitem of armor.system.subitems) {
+            if (subitem.name.toLowerCase().includes("environmental protection")) {
+                return true;
+            }
         }
     }
 
@@ -34,97 +36,170 @@ function armorHasProtection(armor) {
 }
 
 
-async function resetEnvironmentalProtection() {
-    let actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
-    if (!actor) return void ui.notifications.warn("No character assigned and no token selected.");
+async function resetSingleEnvironmentalProtection(armor, actor) {
+    if (armor.type !== "armor") {
+        actor = armor;
+        armor = actor.items.filter(i =>
+            i.type === "armor" && i.system.equipped.inSlot
+        )[0];
+    }
 
-    const armorList = actor.items.filter(i =>
-        i.type === "armor" && i.system.equipped.inSlot
-    );
+    let duration = 0;
+    if (armorHasProtection(armor)) {
+        duration = Math.max(1, armor.system.level.value) * 24 * 60 * 60;
+    }
 
-    if (armorList.length === 0) return void ui.notifications.warn("Character has no armor equipped!");
-
-    if (armorHasProtection(armorList[0])) {
-        const armor_level = Math.max(1, armorList[0].system.level.value);
-        await actor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", armor_level * 24 * 60 * 60);
+    if (game.settings.get('sf2e-anachronism-automation', 'duration-per-armor')) {
+        await armor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", duration);
     } else {
-        await actor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", 0);
+        await actor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", duration);
     }
 }
 
 
+async function resetEnvironmentalProtection() {
+    const actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
+    if (!actor) return void ui.notifications.warn("No character assigned and no token selected.");
+    const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
+    const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
+
+    if (game.settings.get('sf2e-anachronism-automation', 'duration-per-armor')) {
+        const armorList = actor.items.filter(i =>
+            i.type === "armor"
+        );
+        if (armorList.length === 0) return void ui.notifications.warn("Character has no armor!");
+
+        for (let armor of armorList) {
+            await resetSingleEnvironmentalProtection(armor);
+        }
+
+        if (existingEffectOn.length === 1) {
+            let effect = existingEffectOn[0];
+
+            // edit the on effect
+        } else if (existingEffectOff.length === 1) {
+            let effect = existingEffectOff[0];
+            //edit the off effect
+        }
+    } else {
+        const armorList = actor.items.filter(i =>
+            i.type === "armor" && i.system.equipped.inSlot
+        );
+        if (armorList.length === 0) return void ui.notifications.warn("Character has no armor equipped!");
+
+        await resetSingleEnvironmentalProtection(armorList[0], actor);
+    }
+}
+
+async function getRemainingTime(flagWearer) {
+    let remaining = flagWearer.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+    if (remaining === undefined) {
+        await resetSingleEnvironmentalProtection(flagWearer);
+        remaining = flagWearer.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+    }
+    return remaining
+}
+
+function readableTime(seconds) {
+    const days = Math.floor(seconds / (24 * 3600));
+    seconds %= 24 * 3600;
+    const hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    const minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+
+    const parts = [];
+    if (days) parts.push(`${days}d`);
+    if (hours) parts.push(`${hours}h`);
+    if (minutes) parts.push(`${minutes}m`);
+    if (seconds || parts.length === 0) parts.push(`${seconds}s`);
+
+    return parts.join(" ");
+}
+
+
 async function toggleEnvironmentalProtection() {
-    let actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
+    const actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
     if (!actor) return void ui.notifications.warn("No character assigned and no token selected.");
 
-    const armorList = actor.items.filter(i =>
-        i.type === "armor" && i.system.equipped.inSlot
-    );
-
-    if (armorList.length === 0) return void ui.notifications.warn("Character has no armor!");
-
-    const armor = armorList[0];
+    const isPerArmor = game.settings.get('sf2e-anachronism-automation', 'duration-per-armor')
 
     const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
     const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
 
-    let remaining = actor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
-    if (remaining === undefined) {
-        await resetEnvironmentalProtection();
-        remaining = actor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+    let armorWorn = actor.items.filter(i =>
+        i.type === "armor" && i.system.equipped.inSlot
+    );
+    if (armorWorn.length === 0) return void ui.notifications.warn("Character has no worn armor!");
+    armorWorn = armorWorn[0];
+
+    let armorList;
+
+    if (isPerArmor) {
+        armorList = actor.items.filter(i =>
+            i.type === "armor" && !i.system.equipped.inSlot
+        );
     }
 
     let duration;
     let image;
     let state;
     let description;
-    let rules;
+    let rules = [];
 
-    if (existingEffectOn.length !== 0) {
+    if (existingEffectOn.length !== 0) { // on -> off
+        let remainingDuration;
         for (let effect of existingEffectOn) {
+            remainingDuration = effect.remainingDuration.remaining;
             await effect.delete();
         }
 
-        let remaining_readable;
-
-        if (remaining >= 60 * 60 * 24 * 7 * 2) { // more than one week
-            remaining_readable = Math.floor(remaining / 60 / 60 / 24 / 7) + " weeks remaining.";
-        } else if (remaining >= 60 * 60 * 24 * 2) { // more than one day
-            remaining_readable = Math.floor(remaining / 60 / 60 / 24) + " days remaining.";
-        } else if (remaining >= 60 * 60 * 2) { // more than one hour
-            remaining_readable = Math.floor(remaining / 60 / 60) + " hours remaining.";
-        } else if (remaining >= 60 * 2) { // more than one minute
-            remaining_readable = Math.floor(remaining / 60) + " minutes remaining.";
+        if (isPerArmor) {
+            description = "You are not under Environmental Protection.<br>Worn armor's (@UUID[" + armorWorn.sourceId + "]) remaining duration: " + readableTime(remainingDuration);
+            if (armorList.length !== 0) {
+                description += "<br>Your other armors are:";
+                for (let armor of armorList) {
+                    description += "<br>- @UUID[" + armor.sourceId + "]: " + readableTime(await getRemainingTime(armor));
+                }
+            }
         } else {
-            remaining_readable = remaining + " seconds remaining.";
+            description = "You are not under Environmental Protection.<br>It has " + readableTime(await getRemainingTime(actor)) + " duration remaining.<br><br>Last triggered from: @UUID[" + armorWorn.sourceId + "]";
         }
 
         state = "OFF";
-        image = armor.img;
-        description = "Your armor's Environmental Protection is OFF.<br>It has " + remaining_readable + "<br><br>Sourced from: @UUID[" + armor.sourceId + "]";
+        image = armorWorn.img;
         duration = {
             unit: "unlimited"
         }
-        rules = [];
-    } else {
-        if (remaining === 0) return void ui.notifications.warn("Your armor has ran out of duration for it's Environmental Protection OR it is Exposed.");
+    } else { // off -> on
+        let remaining;
+        if (isPerArmor) {
+            description = "Your armor's (@UUID[" + armorWorn.sourceId + "]) Environmental Protection is currently working.";
+            if (armorList.length !== 0) {
+                description += "<br>Your other armors are:";
+                for (let armor of armorList) {
+                    description += "<br>- @UUID[" + armor.sourceId + "]: " + readableTime(await getRemainingTime(armor));
+                }
+            }
+            remaining = await getRemainingTime(armorWorn);
+        } else {
+            description = "Your armor's Environmental Protection is currently working.<br><br>Triggered from: @UUID[" + armorWorn.sourceId + "]";
+            remaining = await getRemainingTime(actor);
+        }
+
+        if (remaining === 0) return void ui.notifications.warn("Your armor has run out of duration for its Environmental Protection OR it is Exposed.");
 
         state = "ON";
-        image = armor.img;
-        description = "Your armor's Environmental Protection is currently working.<br><br>Sourced from: @UUID[" + armor.sourceId + "]";
+        image = armorWorn.img;
         duration = {
             unit: "rounds",
             value: Math.floor(remaining / 6)
         }
         if (game.settings.get('sf2e-anachronism-automation', 'environmental-protection-plus')) {
-            rules = [
-                {
-                    key: "Immunity",
-                    type: "olfactory"
-                }
-            ];
-        } else {
-            rules = [];
+            rules.push({
+                key: "Immunity",
+                type: "olfactory"
+            });
         }
 
         if (existingEffectOff) {
