@@ -12,230 +12,89 @@ Hooks.once("ready", () => {
 });
 
 
-function armorHasProtection(armor) {
-    if (armor.system.subitems.size > 0) {
-        for (let subitem of armor.system.subitems) {
-            if (subitem.name.toLowerCase().includes("environmental protection")) {
-                return true;
-            }
-        }
-    }
-
-    if (armor.system.traits.value.includes("exposed")) {
-        return false;
-    }
-
-    if (game.settings.get('sf2e-anachronism-automation', 'check-publication')) {
-        const publication = armor.system.publication.title.toLowerCase();
-        if (!publication.includes("starfinder") && !publication.includes("sf")) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-async function resetSingleEnvironmentalProtection(armor, actor) {
-    if (armor.type !== "armor") {
-        actor = armor;
-        armor = actor.items.filter(i =>
-            i.type === "armor" && i.system.equipped.inSlot
-        )[0];
-    }
-
-    let duration = 0;
-    if (armorHasProtection(armor)) {
-        duration = Math.max(1, armor.system.level.value) * 24 * 60 * 60;
-    }
-
-    if (game.settings.get('sf2e-anachronism-automation', 'duration-per-armor')) {
-        await armor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", duration);
-    } else {
-        await actor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", duration);
-    }
-}
-
-
 async function resetEnvironmentalProtection() {
-    const actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
-    if (!actor) return void ui.notifications.warn("No character assigned and no token selected.");
+    const actor = getActor();
     const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
     const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
 
-    if (game.settings.get('sf2e-anachronism-automation', 'duration-per-armor')) {
-        const armorList = actor.items.filter(i =>
-            i.type === "armor"
-        );
-        if (armorList.length === 0) return void ui.notifications.warn("Character has no armor!");
+    const armorList = getArmorList(actor, true);
+    const armorWorn = getWornArmor(actor);
+    if (armorList.length === 0 && !armorWorn) return void ui.notifications.warn("Character has no armor!");
 
-        for (let armor of armorList) {
-            await resetSingleEnvironmentalProtection(armor);
+    await resetSingleEnvironmentalProtection(armorWorn);
+    for (let armor of armorList) {
+        await resetSingleEnvironmentalProtection(armor);
+    }
+
+    if (existingEffectOn.length === 1) {
+        let effect = existingEffectOn[0];
+
+        let description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: Active!";
+        if (armorList.length !== 0) {
+            description += "<br>Your other armors are:";
+            for (let armor of armorList) {
+                description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
+            }
         }
 
-        if (existingEffectOn.length === 1) {
-            let effect = existingEffectOn[0];
+        await effect.update({
+            system: {
+                duration: {
+                    unit: "rounds",
+                    value: Math.floor(await getRemainingTime(armorWorn) / 6)
+                },
+                start: {
+                    value: game.time.worldTime
+                },
+                description: {
+                    value: description
+                }
+            }
+        });
+    } else if (existingEffectOff.length === 1) {
+        let effect = existingEffectOff[0];
 
-            // edit the on effect
-        } else if (existingEffectOff.length === 1) {
-            let effect = existingEffectOff[0];
-            //edit the off effect
+        let description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: " + readableTime(await getRemainingTime(armorWorn));
+        if (armorList.length !== 0) {
+            description += "<br>Your other armors are:";
+            for (let armor of armorList) {
+                description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
+            }
         }
-    } else {
-        const armorList = actor.items.filter(i =>
-            i.type === "armor" && i.system.equipped.inSlot
-        );
-        if (armorList.length === 0) return void ui.notifications.warn("Character has no armor equipped!");
 
-        await resetSingleEnvironmentalProtection(armorList[0], actor);
+        await effect.update({
+            system: {
+                description: {
+                    value: description
+                }
+            }
+        });
     }
-}
-
-async function getRemainingTime(flagWearer) {
-    let remaining = flagWearer.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
-    if (remaining === undefined) {
-        await resetSingleEnvironmentalProtection(flagWearer);
-        remaining = flagWearer.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
-    }
-    return remaining
-}
-
-function readableTime(seconds) {
-    const days = Math.floor(seconds / (24 * 3600));
-    seconds %= 24 * 3600;
-    const hours = Math.floor(seconds / 3600);
-    seconds %= 3600;
-    const minutes = Math.floor(seconds / 60);
-    seconds %= 60;
-
-    const parts = [];
-    if (days) parts.push(`${days}d`);
-    if (hours) parts.push(`${hours}h`);
-    if (minutes) parts.push(`${minutes}m`);
-    if (seconds || parts.length === 0) parts.push(`${seconds}s`);
-
-    return parts.join(" ");
 }
 
 
 async function toggleEnvironmentalProtection() {
-    const actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
-    if (!actor) return void ui.notifications.warn("No character assigned and no token selected.");
-
-    const isPerArmor = game.settings.get('sf2e-anachronism-automation', 'duration-per-armor')
-
+    const actor = getActor();
     const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
     const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
 
-    let armorWorn = actor.items.filter(i =>
-        i.type === "armor" && i.system.equipped.inSlot
-    );
-    if (armorWorn.length === 0) return void ui.notifications.warn("Character has no worn armor!");
-    armorWorn = armorWorn[0];
-
-    let armorList;
-
-    if (isPerArmor) {
-        armorList = actor.items.filter(i =>
-            i.type === "armor" && !i.system.equipped.inSlot
-        );
-    }
-
-    let duration;
-    let image;
-    let state;
-    let description;
-    let rules = [];
-
     if (existingEffectOn.length !== 0) { // on -> off
-        let remainingDuration;
         for (let effect of existingEffectOn) {
-            remainingDuration = effect.remainingDuration.remaining;
             await effect.delete();
         }
-
-        if (isPerArmor) {
-            description = "You are not under Environmental Protection.<br>Worn armor's (@UUID[" + armorWorn.sourceId + "]) remaining duration: " + readableTime(remainingDuration);
-            if (armorList.length !== 0) {
-                description += "<br>Your other armors are:";
-                for (let armor of armorList) {
-                    description += "<br>- @UUID[" + armor.sourceId + "]: " + readableTime(await getRemainingTime(armor));
-                }
-            }
-        } else {
-            description = "You are not under Environmental Protection.<br>It has " + readableTime(await getRemainingTime(actor)) + " duration remaining.<br><br>Last triggered from: @UUID[" + armorWorn.sourceId + "]";
-        }
-
-        state = "OFF";
-        image = armorWorn.img;
-        duration = {
-            unit: "unlimited"
-        }
     } else { // off -> on
-        let remaining;
-        if (isPerArmor) {
-            description = "Your armor's (@UUID[" + armorWorn.sourceId + "]) Environmental Protection is currently working.";
-            if (armorList.length !== 0) {
-                description += "<br>Your other armors are:";
-                for (let armor of armorList) {
-                    description += "<br>- @UUID[" + armor.sourceId + "]: " + readableTime(await getRemainingTime(armor));
-                }
-            }
-            remaining = await getRemainingTime(armorWorn);
-        } else {
-            description = "Your armor's Environmental Protection is currently working.<br><br>Triggered from: @UUID[" + armorWorn.sourceId + "]";
-            remaining = await getRemainingTime(actor);
-        }
-
-        if (remaining === 0) return void ui.notifications.warn("Your armor has run out of duration for its Environmental Protection OR it is Exposed.");
-
-        state = "ON";
-        image = armorWorn.img;
-        duration = {
-            unit: "rounds",
-            value: Math.floor(remaining / 6)
-        }
-        if (game.settings.get('sf2e-anachronism-automation', 'environmental-protection-plus')) {
-            rules.push({
-                key: "Immunity",
-                type: "olfactory"
-            });
-        }
-
+        await applyEnvironmentalProtection("on", actor)
         if (existingEffectOff) {
             for (let effect of existingEffectOff) {
                 await effect.delete();
             }
         }
     }
-
-    const environmental_protection_effect = {
-        name: "Environmental Protection " + state,
-        type: "effect",
-        img: image,
-        system: {
-            tokenIcon: {
-                show: true
-            },
-            duration: duration,
-            start: {
-                value: game.time.worldTime
-            },
-            slug: "environmental-protection-" + state.toLowerCase(),
-            description: {
-                value: description
-            },
-            rules: rules
-        }
-    };
-
-    await actor.createEmbeddedDocuments("Item", [environmental_protection_effect]);
 }
 
 
 async function transferVitality() {
-    const actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
-    if (!actor) return void ui.notifications.warn("No character assigned and no token selected.");
+    const actor = getActor();
     if (!actor.system.resources.vitalityNetwork) return void ui.notifications.warn("Character has no Vitality Network.");
     if (actor.system.resources.vitalityNetwork.value === 0) return void ui.notifications.warn("Your Vitality Network is empty.")
 
@@ -277,8 +136,7 @@ async function transferVitality() {
 
 
 async function getEm() {
-    const actor = canvas.tokens.controlled[0]?.actor ?? game.user.character;
-    if (!actor) return ui.notifications.warn("You have no set actor, select the actor using the ability.");
+    const actor = getActor();
     const targets = game.user.targets;
     if (targets.size === 0) return ui.notifications.warn("No target selected!");
     if (targets.size > 1) return ui.notifications.warn("Only select one target!");

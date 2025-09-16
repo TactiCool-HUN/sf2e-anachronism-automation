@@ -13,7 +13,7 @@ Hooks.on('init', () => {
 });
 
 Hooks.on("ready", () => {
-    if (game.settings.get('sf2e-anachronism-automation', 'mystic-network-recharge')) {
+    if (getSetting('mystic-network-recharge')) {
         Hooks.on("pf2e.startTurn", async (combatant) => {
             const actor = combatant.actor;
             if (actor.class?.name === 'Mystic') {

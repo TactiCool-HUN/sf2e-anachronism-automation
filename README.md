@@ -9,7 +9,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 **Environmental Protection**
 - Players can toggle their environmental protection on/off using a macro, there is also a macro to reset the duration.
   - Note! This is technically not coded RAI, as it is counting protection timer in about 6 second accuracy, while technically if you turn on environmental protection you expend at minimum 1 full day of charge from it.
-  - Also, this does not (yet) handle armor change, when you change your armor please use the reset macro to reset the duration you have.
+  - Protection is tracked by the armor, feel free to swap them around and such, as long as it's the same 
 - Automatically detect Exposed armors
   - Including the rule that all Pathfinder armor are Exposed (technically all non-starfinder armor is marked as Exposed, this can be turned off).
   - Also detects if an armor has a subitem that includes "environmental protection" in its name.
@@ -29,6 +29,9 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 ## Check Publication
 [GM] If turned on, the module decides whether an armor has environmental protection available partially based on whether it is a Starfinder publication or not.
+
+## Visible Protection Icon
+[GM] If turned on, the Environmental Protection effect will put an icon on the token (the effect will be applied either way).
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!

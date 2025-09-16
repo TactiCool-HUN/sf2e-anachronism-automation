@@ -9,6 +9,7 @@
     "verified": "13"
   },
   "scripts": [
+    "scripts/utils.js",
     "scripts/mysticAutomation.js",
     "scripts/environmentalProtection.js",
     "scripts/macros.js",
