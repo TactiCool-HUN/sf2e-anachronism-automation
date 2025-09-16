@@ -38,32 +38,69 @@ Hooks.on('init', () => {
 
 Hooks.on("deleteItem", async (item, options, userId) => {
     if (item.system.slug === "environmental-protection-on") {
-        const actor = item.parent
-        let armorWorn = getWornArmor(actor)
-        if (armorWorn.length === 0) return void ui.notifications.warn("Unexpected Error: no equipped armor detected! Remaining time could not be recorded. Remaining time: " + Math.max(0, item.remainingDuration.remaining));
+        const armorWorn = getWornArmor(item.parent);
+        if (armorWorn) {
+            await armorWorn.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", Math.max(0, item.remainingDuration.remaining));
+        }
 
-        await armorWorn.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", Math.max(0, item.remainingDuration.remaining));
-        await applyEnvironmentalProtection("off", actor);
+        await setProtectionState(item.parent, false);
     } else if (item.type === "armor") {
-        // armor deleted
-    }
-});
-
-/*
-Hooks.on("updateItem", async (item, update) => {
-    if (item.type === "armor") {
-        if (item.system.equipped?.inSlot === true && update.system.equipped?.inSlot === false) {
-            console.log("unequip?")
-        } else if (item.system.equipped?.inSlot === false && update.system.equipped?.inSlot === true) {
-            console.log("equip?")
+        if (await getProtectionState(item.parent)) {
+            await item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0].delete();
+        } else {
+            await updateProtectionDisplay(item.parent.uuid);
         }
     }
-    console.log(item); // pre
-    console.log(update); // change
 });
-*/
+
+
+Hooks.on("updateItem", async (item, update) => {
+    if (item.type === "armor") {
+        if (update.system?.equipped?.inSlot === true) {
+            console.log("equip");
+            await updateProtectionDisplay(item.parent.uuid);
+        } else if (update.system?.equipped?.inSlot === false) {
+            console.log("unequip");
+            if (await getProtectionState(item.parent)) {
+                const effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0];
+                await item.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", Math.max(0, effect.remainingDuration.remaining));
+                await effect.delete();
+            } else {
+                await updateProtectionDisplay(item.parent.uuid);
+            }
+        }
+    }
+});
+
+
+Hooks.on("createItem", async (item, options, userId) => {
+    if (item.type === "armor") {
+        await updateProtectionDisplay(item.parent.uuid);
+    }
+});
+
 
 // | | | | | FUNCTIONS | | | | |
+
+
+function getWornArmor(actor) {
+    let armorWorn = actor.items.filter(i =>
+        i.type === "armor" && i.system.equipped.inSlot
+    );
+    return armorWorn[0];
+}
+
+function getArmorList(actor, excludeWorn = true) {
+    if (excludeWorn) {
+        return actor.items.filter(i =>
+            i.type === "armor" && !i.system.equipped.inSlot
+        );
+    } else {
+        return actor.items.filter(i =>
+            i.type === "armor"
+        );
+    }
+}
 
 
 function armorHasProtection(armor) {
@@ -92,14 +129,15 @@ function armorHasProtection(armor) {
 
 async function getRemainingTime(armor) {
     let remaining = armor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+    const actor = armor.parent
     if (remaining === undefined) {
-        remaining = getActor().getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+        remaining = actor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
         if (remaining === undefined) {
             await resetSingleEnvironmentalProtection(armor);
             remaining = armor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
         } else {
             console.log("sf2e-anachronism-automation | Legacy flag found, unsetting it.")
-            getActor().unsetFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+            actor.unsetFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
         }
     }
     return remaining;
@@ -115,17 +153,51 @@ async function resetSingleEnvironmentalProtection(armor) {
 }
 
 
-async function applyEnvironmentalProtection(state, actor) {
+async function getProtectionState(actor) {
+    let status = await actor.getFlag("sf2e-anachronism-automation", "environmentalProtectionStatus");
+    if (status === null) {
+        await setProtectionState(actor, false);
+        status = false;
+    }
+    return status;
+}
+
+
+async function setProtectionState(actor, setTo) {
+    await actor.setFlag("sf2e-anachronism-automation", "environmentalProtectionStatus", setTo);
+    await updateProtectionDisplay(actor.uuid);
+}
+
+
+async function updateProtectionDisplay(actorUuid) {
+    const actor = await fromUuid(actorUuid);
+    if (!actor) return void console.log('sf2e-anachronism-automation | actor not found from UUID');
+
+    const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
+    const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
+    let existingEffect;
+
+    let state;
     let image;
     let duration;
-    let description;
-    const rules = [];
+    let description = "";
+    let rules = [];
 
-    let armorList = getArmorList(actor);
-    let armorWorn = getWornArmor(actor);
+    const armorList = getArmorList(actor);
+    const armorWorn = getWornArmor(actor);
 
-    if (state === true || state.toLowerCase() === "on") {
-        let remaining;
+    if (await getProtectionState(actor)) {
+        if (armorWorn.length === 0) return void ui.notifications.warn("Character has no worn armor!");
+        state = "ON";
+
+        for (let effect of existingEffectOff) {
+            effect.delete();
+        }
+
+        if (existingEffectOn.length !== 0) {
+            existingEffect = existingEffectOn[0];
+        }
+
         description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: Active!";
         if (armorList.length !== 0) {
             description += "<br>Your non-equipped armor charges are:";
@@ -133,12 +205,11 @@ async function applyEnvironmentalProtection(state, actor) {
                 description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
             }
         }
-        remaining = await getRemainingTime(armorWorn);
 
-        if (remaining === 0) return void ui.notifications.warn("Your armor has run out of duration for its Environmental Protection OR it is Exposed.");
-
-        state = "ON";
         image = "modules/sf2e-anachronism/art/icons/abilities/blue-event-horizon.webp";
+
+        let remaining = await getRemainingTime(armorWorn);
+        if (remaining === 0) return void ui.notifications.warn("Your armor has run out of duration for its Environmental Protection OR it is Exposed.");
         duration = {
             unit: "rounds",
             value: Math.floor(remaining / 6)
@@ -150,7 +221,17 @@ async function applyEnvironmentalProtection(state, actor) {
                 type: "olfactory"
             });
         }
-    } else if (state === false || state.toLowerCase() === "off") {
+    } else {
+        state = "OFF";
+
+        for (let effect of existingEffectOn) {
+            effect.delete();
+        }
+
+        if (existingEffectOff.length !== 0) {
+            existingEffect = existingEffectOff[0];
+        }
+
         if (armorWorn) {
             description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: " + readableTime(await getRemainingTime(armorWorn));
         }
@@ -164,37 +245,56 @@ async function applyEnvironmentalProtection(state, actor) {
             }
         }
 
-        state = "OFF";
         image = "modules/sf2e-anachronism-automation/artwork/environmental_protection_off.png";
         duration = {
             unit: "unlimited"
         }
-    } else {
-        console.log("sf2e-anachronism-automation | wrong state given to applyEnvironmentalProtection");
-        return;
     }
 
-    const environmental_protection_effect = {
-        name: "Environmental Protection " + state,
-        type: "effect",
-        img: image,
-        system: {
-            tokenIcon: {
-                show: getSetting("visible-protection-icon")
-            },
-            duration: duration,
-            start: {
-                value: game.time.worldTime
-            },
-            slug: "environmental-protection-" + state.toLowerCase(),
-            description: {
-                value: description
-            },
-            rules: rules
-        }
-    };
+    if (description === "") {
+        description = "No armor in inventory.";
+    }
 
-    await actor.createEmbeddedDocuments("Item", [environmental_protection_effect]);
+    if (existingEffect === undefined) {
+        const environmental_protection_effect = {
+            name: "Environmental Protection " + state,
+            type: "effect",
+            img: image,
+            system: {
+                tokenIcon: {
+                    show: getSetting("visible-protection-icon")
+                },
+                duration: duration,
+                start: {
+                    value: game.time.worldTime
+                },
+                slug: "environmental-protection-" + state.toLowerCase(),
+                description: {
+                    value: description
+                },
+                rules: rules
+            }
+        };
+
+        await actor.createEmbeddedDocuments("Item", [environmental_protection_effect]);
+    } else {
+        existingEffect.update({
+            name: "Environmental Protection " + state,
+            type: "effect",
+            img: image,
+            system: {
+                tokenIcon: {
+                    show: getSetting("visible-protection-icon")
+                },
+                duration: duration,
+                slug: "environmental-protection-" + state.toLowerCase(),
+                description: {
+                    value: description
+                },
+                rules: rules
+            }
+        })
+    }
 }
 
 

@@ -14,80 +14,47 @@ Hooks.once("ready", () => {
 
 async function resetEnvironmentalProtection() {
     const actor = getActor();
-    const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
-    const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
+    const armorList = getArmorList(actor, false);
 
-    const armorList = getArmorList(actor, true);
-    const armorWorn = getWornArmor(actor);
-    if (armorList.length === 0 && !armorWorn) return void ui.notifications.warn("Character has no armor!");
-
-    await resetSingleEnvironmentalProtection(armorWorn);
     for (let armor of armorList) {
         await resetSingleEnvironmentalProtection(armor);
     }
 
-    if (existingEffectOn.length === 1) {
-        let effect = existingEffectOn[0];
-
-        let description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: Active!";
-        if (armorList.length !== 0) {
-            description += "<br>Your other armors are:";
-            for (let armor of armorList) {
-                description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
-            }
-        }
-
+    if (await getProtectionState(actor)) {
+        const effect = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0];
         await effect.update({
             system: {
-                duration: {
-                    unit: "rounds",
-                    value: Math.floor(await getRemainingTime(armorWorn) / 6)
-                },
                 start: {
                     value: game.time.worldTime
-                },
-                description: {
-                    value: description
-                }
-            }
-        });
-    } else if (existingEffectOff.length === 1) {
-        let effect = existingEffectOff[0];
-
-        let description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: " + readableTime(await getRemainingTime(armorWorn));
-        if (armorList.length !== 0) {
-            description += "<br>Your other armors are:";
-            for (let armor of armorList) {
-                description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
-            }
-        }
-
-        await effect.update({
-            system: {
-                description: {
-                    value: description
                 }
             }
         });
     }
+
+    await updateProtectionDisplay(actor.uuid);
 }
 
 
 async function toggleEnvironmentalProtection() {
     const actor = getActor();
-    const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
-    const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
+    const state = await getProtectionState(actor);
 
-    if (existingEffectOn.length !== 0) { // on -> off
-        for (let effect of existingEffectOn) {
-            await effect.delete();
-        }
-    } else { // off -> on
-        await applyEnvironmentalProtection("on", actor)
-        if (existingEffectOff) {
-            for (let effect of existingEffectOff) {
-                await effect.delete();
+    if (state === true) {
+        if (getWornArmor(actor)) {
+            let effect = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
+            if (effect.length > 0) {
+                await effect[0].delete();
+            } else {
+                await setProtectionState(actor, false);
             }
+        } else {
+            ui.notifications.warn("No equipped armor!");
+        }
+    } else {
+        if (getWornArmor(actor)) {
+            await setProtectionState(actor, true);
+        } else {
+            ui.notifications.warn("No equipped armor!");
         }
     }
 }

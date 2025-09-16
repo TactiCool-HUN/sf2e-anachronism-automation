@@ -44,25 +44,4 @@ function readableTime(seconds) {
     }
 }
 
-
-function getWornArmor(actor) {
-    let armorWorn = actor.items.filter(i =>
-        i.type === "armor" && i.system.equipped.inSlot
-    );
-    if (armorWorn.length === 0) return void ui.notifications.warn("Character has no worn armor!");
-    return armorWorn[0];
-}
-
-function getArmorList(actor, excludeWorn = true) {
-    if (excludeWorn) {
-        return actor.items.filter(i =>
-            i.type === "armor" && !i.system.equipped.inSlot
-        );
-    } else {
-        return actor.items.filter(i =>
-            i.type === "armor"
-        );
-    }
-}
-
 console.log('sf2e-anachronism-automation | Init successful: utils.js');
