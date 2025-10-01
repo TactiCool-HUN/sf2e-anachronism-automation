@@ -20,6 +20,10 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 - - Dedication is handled correctly.
 - - Initial strike is now automatic, no longer needed to click a button to activate/deactivate it!
 
+# In the Works
+
+Vacuum and 0g automation, including the untethered drifting.
+
 # Settings
 ## Mystic Network Recharge
 [GM] Toggles whether mystic recharges their vitality network points on the start of their encounter turns automatically.
