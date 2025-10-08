@@ -30,6 +30,16 @@ Hooks.on('init', () => {
         default: true,
         requiresReload: false
     })
+
+    game.settings.register('sf2e-anachronism-automation', 'auto-renew-environmental-protection', {
+        name: 'Auto-Renew Environmental Protection',
+        hint: 'When the 24 hour duration of a single Environmental Protection charge expires, set this to automatically activate the next charge if one is available.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true,
+        requiresReload: false
+    })
 });
 
 
@@ -38,7 +48,7 @@ Hooks.on('init', () => {
 
 Hooks.on("deleteItem", async (item, options, userId) => {
     if (item.system.slug === "environmental-protection-on") {
-        if (item.system.expired === true) { // Maybe have a system setting to opt into auto-renew after expiring.
+        if (getSetting('auto-renew-environmental-protection') && item.system.expired === true) {
             const deficit = Math.floor(item.system.start.value + item.system.duration.value * 6 - game.time.worldTime) / 6;
             await setProtectionState(item.parent, true, deficit);
         }
