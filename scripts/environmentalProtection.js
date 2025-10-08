@@ -38,12 +38,13 @@ Hooks.on('init', () => {
 
 Hooks.on("deleteItem", async (item, options, userId) => {
     if (item.system.slug === "environmental-protection-on") {
-        const armorWorn = getWornArmor(item.parent);
-        if (armorWorn) {
-            await armorWorn.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", Math.max(0, item.remainingDuration.remaining));
+        if (item.system.expired === true) { // Maybe have a system setting to opt into auto-renew after expiring.
+            const deficit = Math.floor(item.system.start.value + item.system.duration.value * 6 - game.time.worldTime) / 6;
+            await setProtectionState(item.parent, true, deficit);
         }
-
-        await setProtectionState(item.parent, false);
+        else{
+            await setProtectionState(item.parent, false);
+        }
     } else if (item.type === "armor") {
         if (await getProtectionState(item.parent)) {
             await item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0].delete();
@@ -61,14 +62,13 @@ Hooks.on("updateItem", async (item, update) => {
         } else if (update.system?.equipped?.inSlot === false) {
             if (await getProtectionState(item.parent)) {
                 const effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0];
-                await item.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", Math.max(0, effect.remainingDuration.remaining));
                 await effect.delete();
             } else {
                 await updateProtectionDisplay(item.parent.uuid);
             }
         } else if (update.system?.subitems) {
             await resetSingleEnvironmentalProtection(item);
-            if (await getRemainingTime(item) === 0) {
+            if (await getRemainingCharges(item) === 0) {
                 let effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
                 if (effect.length > 0) {
                     await effect[0].delete();
@@ -137,29 +137,29 @@ function armorHasProtection(armor) {
 }
 
 
-async function getRemainingTime(armor) {
-    let remaining = armor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+async function getRemainingCharges(armor) {
+    let charges = armor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
     const actor = armor.parent
-    if (remaining === undefined) {
-        remaining = actor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
-        if (remaining === undefined) {
+    if (charges === undefined) {
+        charges = actor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+        if (charges === undefined) {
             await resetSingleEnvironmentalProtection(armor);
-            remaining = armor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
+            charges = armor.getFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
         } else {
             console.log("sf2e-anachronism-automation | Legacy flag found, unsetting it.")
             actor.unsetFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining");
         }
     }
-    return remaining;
+    return charges;
 }
 
 
 async function resetSingleEnvironmentalProtection(armor) {
-    let duration = 0;
+    let charges = 0;
     if (armorHasProtection(armor)) {
-        duration = Math.max(1, armor.system.level.value) * 24 * 60 * 60;
+        charges = Math.max(1, armor.system.level.value);
     }
-    await armor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", duration);
+    await armor.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", charges);
 }
 
 
@@ -173,8 +173,8 @@ async function getProtectionState(actor) {
 }
 
 
-async function setProtectionState(actor, setTo) {
-    if (setTo && await getRemainingTime(getWornArmor(actor)) === 0) {
+async function setProtectionState(actor, setTo, deficit) {
+    if (setTo && await getRemainingCharges(getWornArmor(actor)) === 0) {
         ui.notifications.warn("Armor has no charge!");
     } else {
         await actor.setFlag("sf2e-anachronism-automation", "environmentalProtectionStatus", setTo);
@@ -183,12 +183,12 @@ async function setProtectionState(actor, setTo) {
                 await resetSingleEnvironmentalProtection(armor);
             }
         }
-        await updateProtectionDisplay(actor.uuid);
+        await updateProtectionDisplay(actor.uuid, deficit);
     }
 }
 
 
-async function updateProtectionDisplay(actorUuid) {
+async function updateProtectionDisplay(actorUuid, deficit) {
     let actor = await fromUuid(actorUuid);
     if (!actor) return void console.log('sf2e-anachronism-automation | actor not found from UUID');
 
@@ -224,22 +224,32 @@ async function updateProtectionDisplay(actorUuid) {
             existingEffect = existingEffectOn[0];
         }
 
-        description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: Active!";
+        if (!deficit) {
+            deficit = 0;
+        }
+
+        let charges = await getRemainingCharges(armorWorn);
+        if (charges === 0) return void ui.notifications.warn("Your armor has run out of charges for its Environmental Protection OR it is Exposed.");
+        else if (charges === 1) void ui.notifications.warn("Your armor is using its final charge of Environmental Protection");
+        else if (charges === 2) void ui.notifications.info("Your armor has 1 charge of Environmental Protection remaining.")
+        else void ui.notifications.info("Your armor has " + (charges - 1) + " charges remaining.")
+
+        await armorWorn.setFlag("sf2e-anachronism-automation", "environmentalProtectionRemaining", Math.max(0,--charges));
+
+        duration = {
+            unit: "rounds",
+            value: Math.floor(24 * 60 * 60 / 6) + deficit
+        }
+
+        description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: Active! Plus " + await getRemainingCharges(armorWorn) + " remaining charges";
         if (armorList.length !== 0) {
             description += "<br>Your non-equipped armor charges are:";
             for (let armor of armorList) {
-                description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
+                description += "<br>- @UUID[" + armor.uuid + "]: " + await getRemainingCharges(armor) + " charges";
             }
         }
 
         image = "modules/sf2e-anachronism/art/icons/abilities/blue-event-horizon.webp";
-
-        let remaining = await getRemainingTime(armorWorn);
-        if (remaining === 0) return void ui.notifications.warn("Your armor has run out of duration for its Environmental Protection OR it is Exposed.");
-        duration = {
-            unit: "rounds",
-            value: Math.floor(remaining / 6)
-        }
 
         if (getSetting('environmental-protection-plus')) {
             rules.push({
@@ -259,7 +269,7 @@ async function updateProtectionDisplay(actorUuid) {
         }
 
         if (armorWorn) {
-            description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: " + readableTime(await getRemainingTime(armorWorn));
+            description = "Worn armor:<br>- @UUID[" + armorWorn.uuid + "]: " + await getRemainingCharges(armorWorn) + " charges";
         }
         if (armorWorn && armorList.length !== 0) {
             description += "<br>";
@@ -267,7 +277,7 @@ async function updateProtectionDisplay(actorUuid) {
         if (armorList.length !== 0) {
             description += "Your non-equipped armor charges are:";
             for (let armor of armorList) {
-                description += "<br>- @UUID[" + armor.uuid + "]: " + readableTime(await getRemainingTime(armor));
+                description += "<br>- @UUID[" + armor.uuid + "]: " + await getRemainingCharges(armor) + " charges";
             }
         }
 
