@@ -47,46 +47,50 @@ Hooks.on('init', () => {
 
 
 Hooks.on("deleteItem", async (item, options, userId) => {
-    if (item.system.slug === "environmental-protection-on") {
-        if (getSetting('auto-renew-environmental-protection') && item.system.expired === true) {
-            const deficit = Math.floor(item.system.start.value + item.system.duration.value * 6 - game.time.worldTime) / 6;
-            await setProtectionState(item.parent, true, deficit);
-        }
-        else{
-            await setProtectionState(item.parent, false);
-        }
-    } else if (item.type === "armor") {
-        if (await getProtectionState(item.parent)) {
-            await item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0].delete();
-        } else {
-            await updateProtectionDisplay(item.parent.uuid);
+    if (game.users.current.id == userId) {
+        if (item.system.slug === "environmental-protection-on") {
+            if (getSetting('auto-renew-environmental-protection') && item.system.expired === true) {
+                const deficit = Math.floor(item.system.start.value + item.system.duration.value * 6 - game.time.worldTime) / 6;
+                await setProtectionState(item.parent, true, deficit);
+            }
+            else{
+                await setProtectionState(item.parent, false);
+            }
+        } else if (item.type === "armor") {
+            if (await getProtectionState(item.parent)) {
+                await item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0].delete();
+            } else {
+                await updateProtectionDisplay(item.parent.uuid);
+            }
         }
     }
 });
 
 
-Hooks.on("updateItem", async (item, update) => {
-    if (item.type === "armor") {
-        if (update.system?.equipped?.inSlot === true) {
-            await updateProtectionDisplay(item.parent.uuid);
-        } else if (update.system?.equipped?.inSlot === false) {
-            if (await getProtectionState(item.parent)) {
-                const effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0];
-                await effect.delete();
-            } else {
+Hooks.on("updateItem", async (item, update, options, userId) => {
+    if (game.users.current.id == userId) {
+        if (item.type === "armor") {
+            if (update.system?.equipped?.inSlot === true) {
                 await updateProtectionDisplay(item.parent.uuid);
-            }
-        } else if (update.system?.subitems) {
-            await resetSingleEnvironmentalProtection(item);
-            if (await getRemainingCharges(item) === 0) {
-                let effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
-                if (effect.length > 0) {
-                    await effect[0].delete();
+            } else if (update.system?.equipped?.inSlot === false) {
+                if (await getProtectionState(item.parent)) {
+                    const effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on")[0];
+                    await effect.delete();
                 } else {
-                    await setProtectionState(item.parent, false);
+                    await updateProtectionDisplay(item.parent.uuid);
                 }
-            } else {
-                await updateProtectionDisplay(item.parent.uuid);
+            } else if (update.system?.subitems) {
+                await resetSingleEnvironmentalProtection(item);
+                if (await getRemainingCharges(item) === 0) {
+                    let effect = item.parent.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
+                    if (effect.length > 0) {
+                        await effect[0].delete();
+                    } else {
+                        await setProtectionState(item.parent, false);
+                    }
+                } else {
+                    await updateProtectionDisplay(item.parent.uuid);
+                }
             }
         }
     }
@@ -94,8 +98,10 @@ Hooks.on("updateItem", async (item, update) => {
 
 
 Hooks.on("createItem", async (item, options, userId) => {
-    if (item.type === "armor") {
-        await updateProtectionDisplay(item.parent.uuid);
+    if (game.users.current.id == userId) {
+        if (item.type === "armor") {
+            await updateProtectionDisplay(item.parent.uuid);
+        }
     }
 });
 
