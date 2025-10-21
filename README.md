@@ -40,6 +40,10 @@ Vacuum and 0g automation, including the untethered drifting.
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!
 
+## Contributors
+
+[mechamaya](https://github.com/mechamaya) has made a wonderful little update for me while I was busy with university, lots of thanks to her too! 
+
 # You can support me on Ko-Fi!
 Not at all required, but I'm always happy to have a bit more spending money, uni life is though >.<
 
