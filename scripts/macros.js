@@ -22,22 +22,6 @@ Hooks.once("ready", () => {
 });
 
 
-async function applyEffectToAlly(targetToken, effectData) {
-    if (targetToken.actor.isOwner) {
-        // Player owns this actor — apply directly
-        await targetToken.actor.createEmbeddedDocuments("Item", [effectData]);
-    } else {
-        // Relay through GM
-        console.log('sf2e-anachronism-automation | send to socket')
-        game.socket.emit("module.sf2e-anachronism-automation", {
-            action: "applyEffect",
-            tokenId: targetToken.id,
-            effectData: effectData,
-        });
-    }
-}
-
-
 async function resetEnvironmentalProtection() {
     const actor = getActor();
     const armorList = getArmorList(actor, false);

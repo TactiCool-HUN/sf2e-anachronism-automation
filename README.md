@@ -6,6 +6,10 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 - Mystic automatically recharges the proper amount of vitality network points in encounter mode at the start of their turn.
 - Adds a macro for the Transfer Vitality action.
 
+**Operative**
+(WIP!)
+- Optional reminder for the Kill Steal feat.
+
 **Environmental Protection**
 - Players can toggle their environmental protection on/off using a macro, there is also a macro to reset the duration.
   - Protection is tracked by the armor, feel free to swap them around and such, as long as it's the same 
@@ -22,7 +26,6 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 # In the Works
 
 Vacuum and 0g automation, ~~including the untethered drifting.~~
-Operative Kill Steal reminder.
 
 # Settings
 ## Mystic Network Recharge
@@ -36,6 +39,10 @@ Operative Kill Steal reminder.
 
 ## Visible Protection Icon
 [GM] If turned on, the Environmental Protection effect will put an icon on the token (the effect will be applied either way).
+
+## Operative Kill Steal Reminder
+(WIP!)
+[Client] If turned on you get whispered whenever your Kill Steal might activate at the end of someone else's turn.
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!

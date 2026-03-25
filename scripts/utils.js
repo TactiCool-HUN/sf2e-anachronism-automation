@@ -13,6 +13,22 @@ function getActor(id) {
 }
 
 
+async function applyEffectToAlly(targetToken, effectData) {
+    // useful when a player's macro needs to apply an effect to other tokens
+    if (targetToken.actor.isOwner) {
+        await targetToken.actor.createEmbeddedDocuments("Item", [effectData]);
+    } else {
+        // Relay through GM account
+        console.log('sf2e-anachronism-automation | send to socket')
+        game.socket.emit("module.sf2e-anachronism-automation", {
+            action: "applyEffect",
+            tokenId: targetToken.id,
+            effectData: effectData,
+        });
+    }
+}
+
+
 function getSetting(settingName) {
     if (!settingName) {
         console.log("sf2e-anachronism-automation | no settingName given to getSetting()");
