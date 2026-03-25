@@ -9,7 +9,33 @@ Hooks.once("ready", () => {
         mod.macros.resetEnvironmentalProtection = resetEnvironmentalProtection;
         mod.macros.getEm = getEm;
     }
+    game.socket.on("module.sf2e-anachronism-automation", async (data) => {
+        if (!game.user.isGM) return;
+
+        if (data.action === "applyEffect") {
+            const target = canvas.tokens.get(data.tokenId)?.actor;
+            if (!target) return;
+
+            await target.createEmbeddedDocuments("Item", [data.effectData]);
+        }
+    });
 });
+
+
+async function applyEffectToAlly(targetToken, effectData) {
+    if (targetToken.actor.isOwner) {
+        // Player owns this actor — apply directly
+        await targetToken.actor.createEmbeddedDocuments("Item", [effectData]);
+    } else {
+        // Relay through GM
+        console.log('sf2e-anachronism-automation | send to socket')
+        game.socket.emit("module.sf2e-anachronism-automation", {
+            action: "applyEffect",
+            tokenId: targetToken.id,
+            effectData: effectData,
+        });
+    }
+}
 
 
 async function resetEnvironmentalProtection() {
@@ -221,7 +247,7 @@ async function getEm() {
         system: {
             context: {
                 origin: {
-                    actor: "Actor." + actor.id
+                    actor: actor.uuid
                 }
             },
             tokenIcon: {
@@ -236,12 +262,14 @@ async function getEm() {
             description: {
                 value: "Granted by @UUID[Compendium.sf2e-anachronism.actions.Item.cmCtfURzpbzkxWsy]{Get 'Em!}<br><br>You gain a +1 status bonus to attacks against the marked target." + lead_by_description
             },
-            rules: rules
+            rules: rules,
+            badge: null
         }
     };
 
     for (token of ally_tokens) {
-        await token.actor.createEmbeddedDocuments("Item", [effectGetEm]);
+        await applyEffectToAlly(token, effectGetEm);
+        // await token.actor.createEmbeddedDocuments("Item", [effectGetEm]);
     }
 }
 

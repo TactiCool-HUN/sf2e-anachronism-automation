@@ -8,7 +8,6 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 **Environmental Protection**
 - Players can toggle their environmental protection on/off using a macro, there is also a macro to reset the duration.
-  - Note! This is technically not coded RAI, as it is counting protection timer in about 6 second accuracy, while technically if you turn on environmental protection you expend at minimum 1 full day of charge from it.
   - Protection is tracked by the armor, feel free to swap them around and such, as long as it's the same 
 - Automatically detect Exposed armors
   - Including the rule that all Pathfinder armor are Exposed (technically all non-starfinder armor is marked as Exposed, this can be turned off).
@@ -22,7 +21,8 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 # In the Works
 
-Vacuum and 0g automation, including the untethered drifting.
+Vacuum and 0g automation, ~~including the untethered drifting.~~
+Operative Kill Steal reminder.
 
 # Settings
 ## Mystic Network Recharge

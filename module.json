@@ -56,5 +56,6 @@
     ]
   },
   "description": "",
-  "flags": {}
+  "flags": {},
+  "socket": true
 }
