@@ -1,5 +1,6 @@
 console.log('sf2e-anachronism-automation | Init file: mysticAutomation.js');
 
+
 Hooks.on('init', () => {
     game.settings.register('sf2e-anachronism-automation', 'mystic-network-recharge', {
         name: 'Mystic Network Recharge',
@@ -11,6 +12,7 @@ Hooks.on('init', () => {
         requiresReload: true
     });
 });
+
 
 Hooks.on("ready", () => {
     if (getSetting('mystic-network-recharge')) {

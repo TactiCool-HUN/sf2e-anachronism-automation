@@ -7,7 +7,6 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 - Adds a macro for the Transfer Vitality action.
 
 **Operative**
-(WIP!)
 - Optional reminder for the Kill Steal feat.
 
 **Environmental Protection**
@@ -41,7 +40,6 @@ Vacuum and 0g automation, ~~including the untethered drifting.~~
 [GM] If turned on, the Environmental Protection effect will put an icon on the token (the effect will be applied either way).
 
 ## Operative Kill Steal Reminder
-(WIP!)
 [Client] If turned on you get whispered whenever your Kill Steal might activate at the end of someone else's turn.
 
 # Contribution

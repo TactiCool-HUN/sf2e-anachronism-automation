@@ -13,6 +13,16 @@ function getActor(id) {
 }
 
 
+function actorHasFeat(actor, featName) {
+    for (const featGroup of actor.feats.contents) {
+        for (const entry of featGroup.feats) {
+            if (entry.feat?.name === featName) return true;
+        }
+    }
+    return false;
+}
+
+
 async function applyEffectToAlly(targetToken, effectData) {
     // useful when a player's macro needs to apply an effect to other tokens
     if (targetToken.actor.isOwner) {
