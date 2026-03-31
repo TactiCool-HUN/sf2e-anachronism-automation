@@ -19,7 +19,7 @@ Hooks.on("ready", () => {
         // Store hits during the turn
         let currentCombatantHits = {};
 
-        Hooks.on("pf2e.startTurn", (combatant) => {
+        Hooks.on("pf2e.startTurn", (_) => {
             currentCombatantHits = []; // reset each turn
         });
 
@@ -66,7 +66,7 @@ Hooks.on("ready", () => {
                 if (actor.class.name === "Operative") {
                     if (actorHasFeat(actor, "Kill Steal")) {
                         let killStealReady = false;
-                        for (const [target, hits] of Object.entries(currentCombatantHits)) {
+                        for (const [_, hits] of Object.entries(currentCombatantHits)) {
                             if (hits >= 2) killStealReady = true;
                         }
                         const ownerIds = game.users
