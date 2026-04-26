@@ -15,12 +15,13 @@ Hooks.on('init', () => {
 
 
 Hooks.on("ready", () => {
+    const systemId = game.system.id
+    console.log('sf2e-anachronism-automation | ' + systemId);
     if (getSetting('operative-kill-steal-reminder')) {
-        // Store hits during the turn
         let currentCombatantHits = {};
 
         Hooks.on("pf2e.startTurn", (_) => {
-            currentCombatantHits = {}; // reset each turn
+            currentCombatantHits = {};
         });
 
         Hooks.on("createChatMessage", (message) => {
@@ -30,17 +31,25 @@ Hooks.on("ready", () => {
             const currentCombatant = combat.combatant;
             if (!currentCombatant) return;
 
-            // Check the message belongs to the current combatant's token
             if (message.speaker.token !== currentCombatant.tokenId) return;
 
-            // PF2e stores attack roll context in flags
-            const context = message.flags?.pf2e?.context;
+            let context;
+            if (systemId === "pf2e") {
+                context = message.flags?.pf2e?.context;
+            } else {
+                context = message.flags?.sf2e?.context;
+            }
             if (context?.type !== "attack-roll") return;
 
             const outcome = context.outcome; // "success" | "criticalSuccess" | "failure" | "criticalFailure"
 
             if (outcome === "success" || outcome === "criticalSuccess") {
-                const target = message.flags.pf2e.context.target.token;
+                let target;
+                if (systemId === "pf2e") {
+                    target = message.flags.pf2e.context.target.token;
+                } else {
+                    target = message.flags.sf2e.context.target.token;
+                }
                 const hitValue = outcome === "criticalSuccess" ? 2 : 1;
                 currentCombatantHits[target] = (currentCombatantHits[target] ?? 0) + hitValue;
             }

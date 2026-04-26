@@ -46,12 +46,10 @@
         "id": "pf2e",
         "type": "system",
         "compatibility": {}
-      }
-    ],
-    "requires": [
+      },
       {
-        "id": "sf2e-anachronism",
-        "type": "module",
+        "id": "sf2e",
+        "type": "system",
         "compatibility": {}
       }
     ]
