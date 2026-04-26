@@ -20,7 +20,7 @@ Hooks.on("ready", () => {
         let currentCombatantHits = {};
 
         Hooks.on("pf2e.startTurn", (_) => {
-            currentCombatantHits = []; // reset each turn
+            currentCombatantHits = {}; // reset each turn
         });
 
         Hooks.on("createChatMessage", (message) => {
@@ -69,14 +69,16 @@ Hooks.on("ready", () => {
                         for (const [_, hits] of Object.entries(currentCombatantHits)) {
                             if (hits >= 2) killStealReady = true;
                         }
-                        const ownerIds = game.users
-                            .filter(u => actor.testUserPermission(u, "OWNER"))
-                            .map(u => u.id);
+                        if (killStealReady) {
+                            const ownerIds = game.users
+                                .filter(u => actor.testUserPermission(u, "OWNER"))
+                                .map(u => u.id);
 
-                        ChatMessage.create({
-                            content: "You may be able to use your Kill Steal reaction!",
-                            whisper: ownerIds,
-                        });
+                            ChatMessage.create({
+                                content: "You may be able to use your Kill Steal reaction!",
+                                whisper: ownerIds,
+                            });
+                        }
                     }
                 }
             }
