@@ -205,6 +205,7 @@ async function setProtectionState(actor, setTo, deficit) {
 
 
 async function updateProtectionDisplay(actorUuid, deficit) {
+    const systemId = game.system.id
     let actor = await fromUuid(actorUuid);
     if (!actor) return void console.log('sf2e-anachronism-automation | actor not found from UUID');
 
@@ -265,7 +266,7 @@ async function updateProtectionDisplay(actorUuid, deficit) {
             }
         }
 
-        image = "modules/sf2e-anachronism/art/icons/abilities/blue-event-horizon.webp";
+        image = "systems/" + systemId + "/icons/abilities/blue-event-horizon.webp";
 
         if (getSetting('environmental-protection-plus')) {
             rules.push({

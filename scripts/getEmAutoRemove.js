@@ -1,7 +1,13 @@
 console.log('sf2e-anachronism-automation | Init file: getEmAutoRemove.js');
 
 Hooks.on("createChatMessage", async (message) => {
-    const ctx = message.flags?.pf2e?.context;
+    const systemId = game.system.id
+    let ctx;
+    if (systemId === "pf2e") {
+        ctx = message.flags?.pf2e?.context;
+    } else {
+        ctx = message.flags?.sf2e?.context;
+    }
     if (!ctx) return;
 
     if (ctx.type !== "damage-roll") return;

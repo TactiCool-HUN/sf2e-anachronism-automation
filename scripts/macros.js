@@ -113,6 +113,7 @@ async function transferVitality() {
 
 
 async function getEm() {
+    const systemId = game.system.id
     const actor = getActor();
     const targets = game.user.targets;
     if (targets.size === 0) return ui.notifications.warn("No target selected!");
@@ -181,7 +182,7 @@ async function getEm() {
         await actor.createEmbeddedDocuments("Item", [{
             name: "Get 'Em! Lead By Example!",
             type: "effect",
-            img: "modules/sf2e-anachronism/art/icons/abilities/orange-finger-beam.webp",
+            img: "systems/" + systemId + "/icons/abilities/orange-finger-beam.webp",
             system: {
                 tokenIcon: {
                     show: false
@@ -193,7 +194,7 @@ async function getEm() {
                 },
                 slug: "get-em-lead-by-example",
                 description: {
-                    value: "Granted by @UUID[Compendium.sf2e-anachronism.actions.Item.cmCtfURzpbzkxWsy]{Get 'Em!}<br><br>Adds the charisma modifier to the initial roll."
+                    value: "Granted by Get 'Em! Envoy ability.<br><br>Adds the charisma modifier to the initial roll."
                 },
                 rules: [
                     {
@@ -227,7 +228,7 @@ async function getEm() {
     const effectGetEm = {
         name: "Get 'Em!",
         type: "effect",
-        img: "modules/sf2e-anachronism/art/icons/abilities/orange-finger-beam.webp",
+        img: "systems/" + systemId + "/icons/abilities/orange-finger-beam.webp",
         system: {
             context: {
                 origin: {
@@ -244,7 +245,7 @@ async function getEm() {
             },
             slug: "get-em",
             description: {
-                value: "Granted by @UUID[Compendium.sf2e-anachronism.actions.Item.cmCtfURzpbzkxWsy]{Get 'Em!}<br><br>You gain a +1 status bonus to attacks against the marked target." + lead_by_description
+                value: "Granted by Get 'Em! Envoy ability.<br><br>You gain a +1 status bonus to attacks against the marked target." + lead_by_description
             },
             rules: rules,
             badge: null
@@ -253,7 +254,6 @@ async function getEm() {
 
     for (token of ally_tokens) {
         await applyEffectToAlly(token, effectGetEm);
-        // await token.actor.createEmbeddedDocuments("Item", [effectGetEm]);
     }
 }
 

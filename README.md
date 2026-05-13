@@ -3,16 +3,13 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 # What does it do?
 **Mystic**
-Systems: PF2e, SF2e
 - Mystic automatically recharges the proper amount of vitality network points in encounter mode at the start of their turn.
 - Adds a macro for the Transfer Vitality action.
 
 **Operative**
-Systems: PF2e, SF2e
 - Optional reminder for the Kill Steal feat.
 
 **Environmental Protection**
-Systems: PF2e
 - Players can toggle their environmental protection on/off using a macro, there is also a macro to reset the duration.
   - Protection is tracked by the armor, feel free to swap them around and such, as long as it's the same 
 - Automatically detect Exposed armors
@@ -21,14 +18,13 @@ Systems: PF2e
 - Optional rule to make environmental protection actually fully airtight (just adds immunity to olfactory tbh, but this is how I run it so the option is there).
 
 **Envoy: Get 'Em!**
-Systems: PF2e
 - A macro that automatically applies the effect of Get 'Em! to all allied token on the scene.
 - - Dedication is handled correctly.
 - - Initial strike is now automatic, no longer needed to click a button to activate/deactivate it!
 
 # In the Works
 
-Converting the Environmental Protection and Envoy: Get 'Em! to starfinder system
+Nothing; Let me know if you need anything! No promises tho'.
 
 # Settings
 ## Mystic Network Recharge

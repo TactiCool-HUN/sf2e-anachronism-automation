@@ -16,7 +16,6 @@ Hooks.on('init', () => {
 
 Hooks.on("ready", () => {
     const systemId = game.system.id
-    console.log('sf2e-anachronism-automation | ' + systemId);
     if (getSetting('operative-kill-steal-reminder')) {
         let currentCombatantHits = {};
 
