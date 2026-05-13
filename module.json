@@ -1,9 +1,9 @@
 {
   "id": "sf2e-anachronism-automation",
   "title": "SF2e Anachronism Automation",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "manifest": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/latest/download/module.json",
-  "download": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/2.2.3/module.zip",
+  "download": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/2.2.4/module.zip",
   "compatibility": {
     "minimum": "13",
     "verified": "14"
@@ -18,11 +18,23 @@
   ],
   "packs": [
     {
-      "name": "SF2eAutomationMacros",
-      "label": "SF2e Anachronism Macros",
-      "path": "packs/macros",
+      "name": "SF2eAnachronismAutomationMacros",
+      "label": "SF2e Anachronism Automation Macros",
+      "path": "packs/pf2e_macros",
       "type": "Macro",
       "system": "pf2e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "TRUSTED": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "SF2eAutomationMacros",
+      "label": "SF2e Automation Macros",
+      "path": "packs/sf2e_macros",
+      "type": "Macro",
+      "system": "sf2e",
       "ownership": {
         "PLAYER": "OBSERVER",
         "TRUSTED": "OBSERVER",
@@ -54,7 +66,7 @@
       }
     ]
   },
+  "socket": true,
   "description": "",
-  "flags": {},
-  "socket": true
+  "flags": {}
 }
