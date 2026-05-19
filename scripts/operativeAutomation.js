@@ -15,8 +15,8 @@ Hooks.on('init', () => {
 
 
 Hooks.on("ready", () => {
-    const systemId = game.system.id
     if (getSetting('operative-kill-steal-reminder')) {
+        const systemId = game.system.id
         let currentCombatantHits = {};
 
         Hooks.on("pf2e.startTurn", (_) => {

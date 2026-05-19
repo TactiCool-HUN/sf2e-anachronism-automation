@@ -19,9 +19,69 @@ Hooks.on('init', () => {
         default: true,
         requiresReload: true
     });
+    game.settings.register('sf2e-anachronism-automation', 'force-field-critical', {
+        name: 'Force Field Critical Hit Reminder',
+        hint: 'While turned on when you get hit by a critical hit you get a reminder to roll the flat check to negate it.',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        requiresReload: true
+    });
 });
 
+
 Hooks.on('ready', () => {
+    if (getSetting('force-field-critical')) {
+        Hooks.on('createChatMessage', async (message) => {
+            const systemId = game.system.id;
+            let flags;
+            if (systemId === "pf2e") {
+                flags = message.flags?.pf2e;
+            } else {
+                flags = message.flags?.sf2e;
+            }
+
+            console.log(flags);
+            if (flags?.context?.type !== 'attack-roll') return;
+            if (flags?.context?.outcome !== 'criticalSuccess') return;
+
+            const targetUUID = flags.context?.target?.token;
+            if (!targetUUID) return;
+
+            const tokenDoc = await fromUuid(targetUUID);
+            const regen = tokenDoc?.actor?.getFlag('sf2e-anachronism-automation', 'force-field-regen');
+
+            if (!regen) return;
+            let dc;
+            if (regen === 0) {
+                return;
+            } else if (regen === 2) {
+                return;
+            } else if (regen === 3) {
+                dc = 20
+            } else if (regen === 4) {
+                dc = 19
+            } else if (regen === 5) {
+                dc = 18
+            } else if (regen === 6) {
+                dc = 17
+            } else if (regen === 7) {
+                dc = 16
+            } else if (regen === 8) {
+                dc = 15
+            }
+
+            const ownerIds = game.users
+                .filter(u => tokenDoc.testUserPermission(u, 'OWNER'))
+                .map(u => u.id);
+
+            ChatMessage.create({
+                content: 'Your Force Field might negate the crit! Flat check: @Check[flat|dc:' + dc + ']',
+                whisper: ownerIds,
+            });
+        });
+    }
     if (getSetting('force-field-hp')) {
         Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
             const newHpValue = changes?.system?.attributes?.hp?.value;
@@ -57,12 +117,9 @@ Hooks.on('ready', () => {
             let badgeValue = effect.system.badge?.value ?? 0;
 
             if (!regen) return;
-            console.log('regen exists');
             if (regen === 0) {
-                console.log('noregen');
                 return;
             } else if (regen === 2) {
-                console.log('yesregen');
                 badgeValue = Math.min(badgeValue + regen, 6);
             } else if (regen === 3) {
                 badgeValue = Math.min(badgeValue + regen, 14);
@@ -80,9 +137,11 @@ Hooks.on('ready', () => {
 
             effect.update({ "system.badge.value": badgeValue });
         });
-        Hooks.on("createItem", async (item, options, userId) => {
+        Hooks.on('createItem', async (item, options, userId) => {
+            console.log('create');
             if (item.type === 'effect' && item.slug === 'effect-force-field') {
                 const badgeValue = item.system.badge?.value ?? 0;
+                console.log('force');
 
                 if (badgeValue === 6) {
                     item.parent.setFlag('sf2e-anachronism-automation', 'force-field-regen', 2);
@@ -101,7 +160,7 @@ Hooks.on('ready', () => {
                 }
             }
         });
-        Hooks.on("createItem", async (item, options, userId) => {
+        Hooks.on('deleteItem', async (item, options, userId) => {
             if (item.type === 'effect' && item.slug === 'effect-force-field') {
                 item.parent.setFlag('sf2e-anachronism-automation', 'force-field-regen', 0);
             }

@@ -26,6 +26,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 - Makes the "Effect: Force Field" effect act like temporary hit points on top of temporary hit points, using the effect's badge value.
 - Automatically regenerates the Force Field's hit points at the start of your turn.
 - - Requires you to apply "Effect: Force Field" from the item, basically it checks what the starting value of it is when applied.
+- Reminds you that it might negate critical hits you take.
 
 # In the Works
 
@@ -52,6 +53,9 @@ Nothing; Let me know if you need anything! No promises tho'.
 
 ## Force Field Auto Regen
 [GM] Automatically regenerates Force Field on start of turn if applicable.
+
+## Force Field Critical Hit Reminder
+[Client] Reminds you when you get critically hit that your Force Field might negate it.
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!
