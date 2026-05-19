@@ -1,9 +1,9 @@
 {
   "id": "sf2e-anachronism-automation",
   "title": "SF2e Anachronism Automation",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "manifest": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/latest/download/module.json",
-  "download": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/3.0.0/module.zip",
+  "download": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/3.1.0/module.zip",
   "compatibility": {
     "minimum": "13",
     "verified": "14"
@@ -14,7 +14,8 @@
     "scripts/operativeAutomation.js",
     "scripts/environmentalProtection.js",
     "scripts/macros.js",
-    "scripts/getEmAutoRemove.js"
+    "scripts/getEmAutoRemove.js",
+    "scripts/forceFieldAutomation.js"
   ],
   "packs": [
     {

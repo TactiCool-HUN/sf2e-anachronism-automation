@@ -9,6 +9,11 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 **Operative**
 - Optional reminder for the Kill Steal feat.
 
+**Envoy: Get 'Em!**
+- A macro that automatically applies the effect of Get 'Em! to all allied token on the scene.
+- - Dedication is handled correctly.
+- - Initial strike is now automatic, no longer needed to click a button to activate/deactivate it!
+
 **Environmental Protection**
 - Players can toggle their environmental protection on/off using a macro, there is also a macro to reset the duration.
   - Protection is tracked by the armor, feel free to swap them around and such, as long as it's the same 
@@ -17,10 +22,10 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
   - Also detects if an armor has a subitem that includes "environmental protection" in its name.
 - Optional rule to make environmental protection actually fully airtight (just adds immunity to olfactory tbh, but this is how I run it so the option is there).
 
-**Envoy: Get 'Em!**
-- A macro that automatically applies the effect of Get 'Em! to all allied token on the scene.
-- - Dedication is handled correctly.
-- - Initial strike is now automatic, no longer needed to click a button to activate/deactivate it!
+**Force Field**
+- Makes the "Effect: Force Field" effect act like temporary hit points on top of temporary hit points, using the effect's badge value.
+- Automatically regenerates the Force Field's hit points at the start of your turn.
+- - Requires you to apply "Effect: Force Field" from the item, basically it checks what the starting value of it is when applied.
 
 # In the Works
 
@@ -41,6 +46,12 @@ Nothing; Let me know if you need anything! No promises tho'.
 
 ## Operative Kill Steal Reminder
 [Client] If turned on you get whispered whenever your Kill Steal might activate at the end of someone else's turn.
+
+## Force Field Damage Trigger
+[GM] Makes Force Field act as temporary hit points on top of temporary hit points.
+
+## Force Field Auto Regen
+[GM] Automatically regenerates Force Field on start of turn if applicable.
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!
