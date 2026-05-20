@@ -15,7 +15,7 @@ Hooks.on('init', () => {
 
 
 Hooks.on("renderCharacterSheetPF2e", (app, html, data) => {
-    if (getSetting('battery-recharge-button')) return;
+    if (!getSetting('battery-recharge-button')) return;
 
     const el = html instanceof HTMLElement ? html : html[0];
     if (el.querySelector("#my-inventory-btn")) return;
@@ -36,18 +36,28 @@ Hooks.on("renderCharacterSheetPF2e", (app, html, data) => {
         event.stopPropagation();
 
         const actor = app.actor;
-        const batteries = actor.items.filter(i =>
+
+        const looseBatteries = actor.items.filter(i =>
             i.type === "ammo" &&
             i.system.baseItem === "battery"
         );
 
-        if (!batteries.length) {
+        const loadedBatteries = actor.items
+            .filter(i => i.type === "weapon")
+            .flatMap(w => [...w.subitems].filter(s =>
+                s.type === "ammo" &&
+                s.system.baseItem === "battery"
+            ));
+
+        const allBatteries = [...looseBatteries, ...loadedBatteries];
+
+        if (!allBatteries.length) {
             ui.notifications.info("No batteries found in inventory! (if you think this is an error please submit a report)");
             return;
         }
 
         await Promise.all(
-            batteries.map(b => b.update({ "system.uses.value": b.system.uses.max }))
+            allBatteries.map(b => b.update({ "system.uses.value": b.system.uses.max }))
         );
     });
 
