@@ -43,6 +43,7 @@ Hooks.once("init", () => {
         const original = cls.prototype.applyDamage;
         cls.prototype.applyDamage = async function (args) {
             const incomingDamage = args.damage?.total;
+            console.log("damage instances:", args.damage?.instances);
             if (getSetting('force-field-hp')) {
                 if (incomingDamage > 0) {
                     const effect = this.items.find(
@@ -56,11 +57,11 @@ Hooks.once("init", () => {
                         const left_over_damage = incomingDamage - absorbed;
                         args.damage._total = left_over_damage
                         let payload;
-                        if (left_over_damage === 0) {
+                        if (badgeValue === incomingDamage) {
                             payload = {
-                                type: 'add',
-                                message: 'Force Field has completely blocked the incoming ' + absorbed + ' damage, completely dissipating in the process. ',
-                                keepResistanceImmunity: true,
+                                type: 'replace',
+                                message: 'Force Field has fully blocked the incoming ' + absorbed + ' damage, completely dissipating in the process. ',
+                                keepResistanceImmunity: false,
                             }
                         } else if (left_over_damage > 0) {
                             payload = {
@@ -71,7 +72,7 @@ Hooks.once("init", () => {
                         } else {
                             payload = {
                                 type: 'replace',
-                                message: 'Force Field has completely blocked the incoming ' + absorbed + ' damage.',
+                                message: 'Force Field has fully blocked the incoming ' + absorbed + ' damage.',
                                 keepResistanceImmunity: false,
                             }
                         }

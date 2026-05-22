@@ -33,7 +33,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 # In the Works
 
-Nothing; Let me know if you need anything! No promises tho'.
+Currently force field blocks all damage, while based on rules it should only be physical and energy damage. I need to get back to this later.
 
 # Settings
 
