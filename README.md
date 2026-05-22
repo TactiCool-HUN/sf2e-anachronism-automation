@@ -36,7 +36,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 Currently force field blocks all damage, while based on rules it should only be physical and energy damage. I need to get back to this later.
 
 # Settings
-
+Explanation is in this [subfile](Settings.md)
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!
