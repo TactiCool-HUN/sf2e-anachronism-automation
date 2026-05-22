@@ -30,8 +30,99 @@ Hooks.on('init', () => {
     });
 });
 
+const pendingAbsorption = new Map();
+
+
+Hooks.once("init", () => {
+    const ACTOR_TYPES = ["character", "npc", "hazard"];
+
+    for (const type of ACTOR_TYPES) {
+        const cls = CONFIG.PF2E.Actor.documentClasses[type];
+        if (!cls) continue;
+
+        const original = cls.prototype.applyDamage;
+        cls.prototype.applyDamage = async function (args) {
+            const incomingDamage = args.damage?.total;
+            if (getSetting('force-field-hp')) {
+                if (incomingDamage > 0) {
+                    const effect = this.items.find(
+                        (item) => item.type === "effect" && item.slug === "effect-force-field"
+                    );
+
+                    if (effect) {
+                        const badgeValue = effect.system.badge?.value ?? 0;
+                        const absorbed = Math.min(incomingDamage, badgeValue);
+
+                        const left_over_damage = incomingDamage - absorbed;
+                        args.damage._total = left_over_damage
+                        let payload;
+                        if (left_over_damage === 0) {
+                            payload = {
+                                type: 'add',
+                                message: 'Force Field has completely blocked the incoming ' + absorbed + ' damage, completely dissipating in the process. ',
+                                keepResistanceImmunity: true,
+                            }
+                        } else if (left_over_damage > 0) {
+                            payload = {
+                                type: 'add',
+                                message: 'Force Field has reduced damage by ' + absorbed + ', completely dissipating in the process. ',
+                                keepResistanceImmunity: true,
+                            }
+                        } else {
+                            payload = {
+                                type: 'replace',
+                                message: 'Force Field has completely blocked the incoming ' + absorbed + ' damage.',
+                                keepResistanceImmunity: false,
+                            }
+                        }
+                        pendingAbsorption.set("Actor." + this.id, payload);
+                        await effect.update({"system.badge.value": badgeValue - absorbed});
+                    }
+                }
+            }
+
+            const result = await original.call(this, args);
+            args.damage._total = incomingDamage;
+            return result;
+        };
+    }
+});
+
 
 Hooks.on('ready', () => {
+    const systemId = game.system.id;
+    if (getSetting('force-field-hp')) {
+        Hooks.on("renderChatMessageHTML", (message, html) => {
+            let actorId;
+            if (systemId === "pf2e") {
+                actorId = message.flags?.pf2e?.origin?.actor;
+            } else {
+                actorId = message.flags?.sf2e?.origin?.actor;
+            }
+            if (!actorId) return;
+
+            const payload = pendingAbsorption.get(actorId);
+            if (!payload) return;
+
+            pendingAbsorption.delete(actorId);
+
+            const statements = html.querySelector(".damage-taken .statements");
+            if (!statements) return;
+
+            if (!payload.keepResistanceImmunity) {
+                html.querySelector(".damage-taken .iwr")?.remove();
+            }
+
+            if (payload.type === 'replace') {
+                statements.textContent = payload.message;
+            } else {
+                const note = document.createElement("span");
+                note.classList.add("force-field-absorption");
+                note.textContent = " " + payload.message;
+                statements.prepend(note);
+            }
+        });
+    }
     if (getSetting('force-field-critical')) {
         Hooks.on('createChatMessage', async (message) => {
             const systemId = game.system.id;
@@ -42,7 +133,6 @@ Hooks.on('ready', () => {
                 flags = message.flags?.sf2e;
             }
 
-            console.log(flags);
             if (flags?.context?.type !== 'attack-roll') return;
             if (flags?.context?.outcome !== 'criticalSuccess') return;
 
@@ -80,27 +170,6 @@ Hooks.on('ready', () => {
                 content: 'Your Force Field might negate the crit! Flat check: @Check[flat|dc:' + dc + ']',
                 whisper: ownerIds,
             });
-        });
-    }
-    if (getSetting('force-field-hp')) {
-        Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
-            const newHpValue = changes?.system?.attributes?.hp?.value;
-            if (newHpValue === undefined) return;
-
-            const currentHp = actor.system.attributes.hp.value;
-            const rawDamage = currentHp - newHpValue;
-            if (rawDamage <= 0) return;
-
-            const effect = actor.items.find(
-                (item) => item.type === 'effect' && item.slug === 'effect-force-field'
-            );
-            if (!effect) return;
-
-            const badgeValue = effect.system.badge?.value ?? 0;
-            const myDamage = Math.max(rawDamage - badgeValue, 0);
-
-            changes.system.attributes.hp.value = currentHp - myDamage;
-            effect.update({ "system.badge.value": badgeValue - rawDamage });
         });
     }
     if (getSetting('force-field-regen')) {
