@@ -37,7 +37,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 Nothing, feel free to suggest stuff! (click the "issues" tab above here on github, and make an issue with the suggestion tag)
 
 # Settings
-
+Explanation is in this [subfile](Settings.md)
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!
