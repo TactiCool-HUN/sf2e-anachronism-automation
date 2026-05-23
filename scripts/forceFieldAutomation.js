@@ -31,6 +31,15 @@ Hooks.on('init', () => {
 });
 
 const pendingAbsorption = new Map();
+const forceFieldDamageTypes = new Set([
+    // Physical
+    "bludgeoning", "piercing", "slashing",
+    // Energy - core
+    "acid", "cold", "electricity", "fire", "sonic",
+    "positive", "negative", "force",
+    // Energy - SF2e additions
+    "plasma", "radiation",
+]);
 
 
 Hooks.once("init", () => {
@@ -42,8 +51,10 @@ Hooks.once("init", () => {
 
         const original = cls.prototype.applyDamage;
         cls.prototype.applyDamage = async function (args) {
-            const incomingDamage = args.damage?.total;
-            console.log("damage instances:", args.damage?.instances);
+            let instances = args.damage?.instances ?? [];
+            const incomingDamage = args.damage?.total ?? 0;
+            const originalTotals = new Map(instances.map(i => [i, i._total]));
+
             if (getSetting('force-field-hp')) {
                 if (incomingDamage > 0) {
                     const effect = this.items.find(
@@ -52,30 +63,49 @@ Hooks.once("init", () => {
 
                     if (effect) {
                         const badgeValue = effect.system.badge?.value ?? 0;
-                        const absorbed = Math.min(incomingDamage, badgeValue);
+                        let absorbed = 0;
+                        let passedThrough = 0;
 
-                        const left_over_damage = incomingDamage - absorbed;
-                        args.damage._total = left_over_damage
-                        let payload;
-                        if (badgeValue === incomingDamage) {
-                            payload = {
-                                type: 'replace',
-                                message: 'Force Field has fully blocked the incoming ' + absorbed + ' damage, completely dissipating in the process. ',
-                                keepResistanceImmunity: false,
-                            }
-                        } else if (left_over_damage > 0) {
-                            payload = {
-                                type: 'add',
-                                message: 'Force Field has reduced damage by ' + absorbed + ', completely dissipating in the process. ',
-                                keepResistanceImmunity: true,
-                            }
-                        } else {
-                            payload = {
-                                type: 'replace',
-                                message: 'Force Field has fully blocked the incoming ' + absorbed + ' damage.',
-                                keepResistanceImmunity: false,
+                        for (const instance of instances) {
+                            if (forceFieldDamageTypes.has(instance.type)){
+                                const remainingShield = badgeValue - absorbed;
+                                if (remainingShield > 0) {
+                                    if (instance._total <= remainingShield) {
+                                        absorbed += instance._total;
+                                        instance._total = 0;
+                                    } else {
+                                        absorbed = badgeValue;
+                                        instance._total -= remainingShield;
+                                    }
+                                }
+                            } else {
+                                passedThrough += instance._total;
                             }
                         }
+                        instances = instances.filter(instance => instance._total > 0);
+                        let total = 0;
+                        for (const instance of instances) {
+                            total += instance._total;
+                        }
+                        args.damage._total = total;
+
+                        let message = '';
+                        if (absorbed > 0) {
+                            message += `The Force Field absorbed ${absorbed} damage.<br>`;
+                        }
+                        if (absorbed === badgeValue) {
+                            message += `Breaking in the process.<br>`;
+                        }
+                        if (passedThrough > 0) {
+                            message += `${passedThrough} damage passed through the Force Field due to its damage type.<br>`;
+                        }
+
+                        const payload ={
+                            message: message,
+                            replace: (absorbed < badgeValue && passedThrough <= 0)
+                        };
+
+
                         pendingAbsorption.set("Actor." + this.id, payload);
                         await effect.update({"system.badge.value": badgeValue - absorbed});
                     }
@@ -83,6 +113,8 @@ Hooks.once("init", () => {
             }
 
             const result = await original.call(this, args);
+            originalTotals.forEach((total, instance) => instance._total = total);
+            args.damage.instances = instances;
             args.damage._total = incomingDamage;
             return result;
         };
@@ -110,16 +142,13 @@ Hooks.on('ready', () => {
             const statements = html.querySelector(".damage-taken .statements");
             if (!statements) return;
 
-            if (!payload.keepResistanceImmunity) {
+            if (payload.replace) {
+                statements.innerHTML = payload.message;
                 html.querySelector(".damage-taken .iwr")?.remove();
-            }
-
-            if (payload.type === 'replace') {
-                statements.textContent = payload.message;
             } else {
-                const note = document.createElement("span");
+                const note = document.createElement("div");
                 note.classList.add("force-field-absorption");
-                note.textContent = " " + payload.message;
+                note.innerHTML = " " + payload.message;
                 statements.prepend(note);
             }
         });

@@ -24,6 +24,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 **Force Field**
 - Makes the "Effect: Force Field" effect act like temporary hit points on top of temporary hit points, using the effect's badge value.
+- - This correctly filters by damage type (as Force Field only blocks physical and energy damage)
 - Automatically regenerates the Force Field's hit points at the start of your turn.
 - - Requires you to apply "Effect: Force Field" from the item, basically it checks what the starting value of it is when applied.
 - Reminds you that it might negate critical hits you take.
@@ -33,7 +34,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 # In the Works
 
-Currently force field blocks all damage, while based on rules it should only be physical and energy damage. I need to get back to this later.
+Nothing, feel free to suggest stuff! (click the "issues" tab above here on github, and make an issue with the suggestion tag)
 
 # Settings
 
