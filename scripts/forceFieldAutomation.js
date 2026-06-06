@@ -67,6 +67,7 @@ Hooks.once("init", () => {
                         let passedThrough = 0;
 
                         for (const instance of instances) {
+                            instance._total = Math.floor(instance._total);
                             if (forceFieldDamageTypes.has(instance.type)){
                                 const remainingShield = badgeValue - absorbed;
                                 if (remainingShield > 0) {
