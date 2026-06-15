@@ -1,0 +1,49 @@
+name: Release Module
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Update module.json
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          jq --arg ver "$VERSION" \
+             --arg url "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/$VERSION/module.zip" \
+             '.version = $ver | .download = $url' \
+             module.json > module.tmp.json && mv module.tmp.json module.json
+
+      - name: Zip module files
+        run: |
+          zip -r module.zip \
+            artwork \
+            packs \
+            scripts \
+            LICENSE \
+            module.json \
+            README.md \
+            Settings.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: v${{ steps.version.outputs.VERSION }}
+          files: |
+            module.zip
+            module.json
+          generate_release_notes: true
