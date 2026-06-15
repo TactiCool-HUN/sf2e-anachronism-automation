@@ -37,7 +37,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 Nothing, feel free to suggest stuff! (click the "issues" tab above here on github, and make an issue with the suggestion tag)
 
 # Settings
-Explanation is in this [subfile](Settings.md)
+Explanation is in this [subfile](Settings.md).
 
 # Contribution
 If you have suggestions for settings or features please let me know by opening an issue with the suggestion tag!
@@ -47,7 +47,7 @@ If you have suggestions for settings or features please let me know by opening a
 [mechamaya](https://github.com/mechamaya) has made a wonderful little update for me while I was busy with university, lots of thanks to her too! 
 
 # You can support me on Ko-Fi!
-Not at all required, but I'm always happy to have a bit more spending money, uni life is though >.<
+Not at all required, but I'm always happy to have a bit more spending money, uni life is though. >.<
 
 https://ko-fi.com/tacticool
 
