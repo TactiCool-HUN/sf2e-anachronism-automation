@@ -132,7 +132,7 @@ function getArmorList(actor, excludeWorn = true) {
 function armorHasProtection(armor) {
     if (armor.system.subitems.length > 0) {
         for (let subitem of armor.system.subitems) {
-            if (subitem.name.toLowerCase().includes("environmental protection")) {
+            if (subitem.slug.includes("environmental-protection")) {
                 return true;
             }
         }

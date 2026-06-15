@@ -121,7 +121,7 @@ async function getEm() {
 
     const target_uuid = targets.values().next().value.document.uuid;
 
-    const is_main_class = actor.class.name === "Envoy";
+    const is_main_class = actor.class.slug === "envoy";
     const has_really_get_em = actor.itemTypes.feat.some(f => f.slug === "really-get-em");
     let is_lead_by_example;
     let lead_by_description = "You have not been <i>Lead by Example</i>, how shameful...";

@@ -18,7 +18,7 @@ Hooks.on("ready", () => {
     if (getSetting('mystic-network-recharge')) {
         Hooks.on("pf2e.startTurn", async (combatant) => {
             const actor = combatant.actor;
-            if (actor.class?.name === 'Mystic') {
+            if (actor.class?.slug === 'mystic') {
                 const current_network = actor.system.resources.vitalityNetwork.value;
                 const max_network = actor.system.resources.vitalityNetwork.max;
                 const spell_prof = actor.system.proficiencies.spellcasting.rank;

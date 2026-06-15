@@ -71,7 +71,7 @@ Hooks.on("ready", () => {
 
             for (const token of allyTokens) {
                 const actor = token.actor;
-                if (actor.class.name === "Operative") {
+                if (actor.class.slug === "operative") {
                     if (actorHasFeat(actor, "Kill Steal")) {
                         let killStealReady = false;
                         for (const [_, hits] of Object.entries(currentCombatantHits)) {
