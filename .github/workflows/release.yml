@@ -23,7 +23,7 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
           jq --arg ver "$VERSION" \
-             --arg url "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/$VERSION/module.zip" \
+             --arg url "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/v$VERSION/module.zip" \
              '.version = $ver | .download = $url' \
              module.json > module.tmp.json && mv module.tmp.json module.json
 
@@ -47,3 +47,21 @@ jobs:
             module.zip
             module.json
           generate_release_notes: true
+
+      - name: Publish to Foundry VTT
+        run: |
+          curl -X POST https://foundryvtt.com/_api/packages/release_version/ \
+            -H "Content-Type: application/json" \
+            -H "Authorization: ${{ secrets.FOUNDRYVTT_RELEASE_TOKEN }}" \
+            -d '{
+              "id": "sf2e-anachronism-automation",
+              "release": {
+                "version": "${{ steps.version.outputs.VERSION }}",
+                "manifest": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/latest/download/module.json",
+                "notes": "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/tag/${{ github.ref_name }}",
+                "compatibility": {
+                  "minimum": "14",
+                  "verified": "14"
+                }
+              }
+            }'
