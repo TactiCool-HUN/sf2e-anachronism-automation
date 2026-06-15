@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout
@@ -23,9 +25,17 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
           jq --arg ver "$VERSION" \
-             --arg url "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/v$VERSION/module.zip" \
+             --arg url "https://github.com/TactiCool-HUN/sf2e-anachronism-automation/releases/download/$VERSION/module.zip" \
              '.version = $ver | .download = $url' \
              module.json > module.tmp.json && mv module.tmp.json module.json
+
+      - name: Commit updated module.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add module.json
+          git commit -m "chore: update module.json to ${{ steps.version.outputs.VERSION }}"
+          git push origin HEAD:master
 
       - name: Zip module files
         run: |
