@@ -47,7 +47,7 @@ Hooks.on('init', () => {
 
 
 Hooks.on("deleteItem", async (item, options, userId) => {
-    if (game.users.current.id == userId) {
+    if (game.users.current.id === userId) {
         if (item.system.slug === "environmental-protection-on") {
             if (getSetting('auto-renew-environmental-protection') && item.system.expired === true) {
                 const deficit = Math.floor(item.system.start.value + item.system.duration.value * 6 - game.time.worldTime) / 6;
@@ -68,7 +68,7 @@ Hooks.on("deleteItem", async (item, options, userId) => {
 
 
 Hooks.on("updateItem", async (item, update, options, userId) => {
-    if (game.users.current.id == userId) {
+    if (game.users.current.id === userId) {
         if (item.type === "armor") {
             if (update.system?.equipped?.inSlot === true) {
                 await updateProtectionDisplay(item.parent.uuid);
@@ -98,7 +98,7 @@ Hooks.on("updateItem", async (item, update, options, userId) => {
 
 
 Hooks.on("createItem", async (item, options, userId) => {
-    if (game.users.current.id == userId) {
+    if (game.users.current.id === userId) {
         if (item.type === "armor") {
             await updateProtectionDisplay(item.parent.uuid);
         }
