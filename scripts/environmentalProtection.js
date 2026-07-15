@@ -133,22 +133,26 @@ function armorHasProtection(armor) {
     if (armor.system.subitems.length > 0) {
         for (let subitem of armor.system.subitems) {
             if (subitem.slug.includes("environmental-protection")) {
+                console.log("true: subsystem")
                 return true;
             }
         }
     }
 
     if (armor.system.traits.value.includes("exposed")) {
+        console.log("false: exposed")
         return false;
     }
 
     if (getSetting('check-publication')) {
         const publication = armor.system.publication.title.toLowerCase();
         if (!publication.includes("starfinder") && !publication.includes("sf")) {
+            console.log("false: not starfinder")
             return false;
         }
     }
 
+    console.log("true: default")
     return true;
 }
 
@@ -214,10 +218,25 @@ async function updateProtectionDisplay(actorUuid, deficit) {
             await resetSingleEnvironmentalProtection(armor);
         }
     }
+    let protection_num = 0
+    for (let armor of getArmorList(actor, false)) {
+        if (armorHasProtection(armor)) {
+            protection_num += 1
+        }
+    }
     actor = await fromUuid(actor.uuid);
 
     const existingEffectOn = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-on");
     const existingEffectOff = actor.items.filter(i => i.type === "effect" && i.slug === "environmental-protection-off");
+    if (protection_num === 0) {
+        for (let effect of existingEffectOff) {
+            effect.delete();
+        }
+        for (let effect of existingEffectOn) {
+            effect.delete();
+        }
+        return
+    }
     let existingEffect;
 
     let state;
