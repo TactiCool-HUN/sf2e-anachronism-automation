@@ -34,7 +34,7 @@ As I started running an ME: Andromeda inspired Starfinder 2e campaign I found so
 
 # In the Works
 
-Nothing, feel free to suggest stuff! (click the "issues" tab above here on github, and make an issue with the suggestion tag)
+Nothing, I no longer have an active SF2e campaign and thus don't look much at here, but still try to fix bugs.
 
 # Settings
 Explanation is in this [subfile](Settings.md).

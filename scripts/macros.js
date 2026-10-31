@@ -41,7 +41,7 @@ async function resetEnvironmentalProtection() {
         });
     }
 
-    await updateProtectionDisplay(actor.uuid);
+    await updateProtectionDisplay(actor);
 }
 
 
@@ -77,12 +77,22 @@ async function transferVitality() {
 
     const current_network = actor.system.resources.vitalityNetwork.value;
     const level = actor.system.details.level.value;
+    const is_main_class = actor.class.slug === "mystic";
 
-    let max_heal = -1;
-    if (level < 5) max_heal = 10;
-    else if (level < 10) max_heal = 20;
-    else if (level < 15) max_heal = 30;
-    else if (level < 20) max_heal = 40;
+    let max_heal;
+    if (is_main_class) {
+        if (level < 5) max_heal = 10;
+        else if (level < 10) max_heal = 20;
+        else if (level < 15) max_heal = 30;
+        else if (level < 20) max_heal = 40;
+        else max_heal = 50;
+    } else {
+        if (level < 5) max_heal = 10;
+        else if (level < 10) max_heal = 15;
+        else if (level < 15) max_heal = 20;
+        else if (level < 20) max_heal = 25;
+        else max_heal = 30;
+    }
     max_heal = Math.min(current_network, max_heal);
 
     const healing_field = new foundry.data.fields.NumberField({
@@ -90,7 +100,7 @@ async function transferVitality() {
         min: 1,
         integer: true,
         label: "Healing",
-        hint: `Possible heal: 1 - ${max_heal}\nVitaliy Network: ${current_network}`,
+        hint: `Possible heal: 1 - ${max_heal}\nVitality Network: ${current_network}`,
     })
 
     const response = await foundry.applications.api.DialogV2.input({
@@ -124,7 +134,7 @@ async function getEm() {
     const is_main_class = actor.class.slug === "envoy";
     const has_really_get_em = actor.itemTypes.feat.some(f => f.slug === "really-get-em");
     let is_lead_by_example;
-    let lead_by_description = "You have not been <i>Lead by Example</i>, how shameful...";
+    let lead_by_description = " You have not been <i>Lead by Example</i>, how shameful...";
 
     if (is_main_class || has_really_get_em) {
         is_lead_by_example = await foundry.applications.api.DialogV2.confirm({
